@@ -1,0 +1,182 @@
+From 25702be8052bcbe38c5a45dbe8070a13154a4279 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Tue, 4 Jun 2019 16:35:46 +0200
+Subject: [PATCH] Adjust SPI Flash layout, fix gadget VID/PID, fix
+ CONFIG_SPL_USB_GADGET rename
+
+---
+ configs/vdt6010_defconfig         | 13 ++++++-----
+ configs/vdt6010_factory_defconfig | 13 ++++++-----
+ include/configs/vdt6010.h         | 46 ++++++++++++++++-----------------------
+ 3 files changed, 33 insertions(+), 39 deletions(-)
+
+diff --git a/configs/vdt6010_defconfig b/configs/vdt6010_defconfig
+index 12b21a3786..81e2fd4bd8 100644
+--- a/configs/vdt6010_defconfig
++++ b/configs/vdt6010_defconfig
+@@ -22,14 +22,17 @@ CONFIG_CMD_EXT4_WRITE=y
+ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
+ CONFIG_CMD_BMP=y
++CONFIG_CMD_SF=y
+ CONFIG_USB=y
+ CONFIG_USB_STORAGE=y
+ CONFIG_USB_GADGET=y
++CONFIG_USB_GADGET_VENDOR_NUM=0x15a2
++CONFIG_USB_GADGET_PRODUCT_NUM=0x1111
++CONFIG_USB_GADGET_MANUFACTURER="datarespons"
++CONFIG_SPI=y
++CONFIG_SPI_FLASH=y
+ CONFIG_CI_UDC=y
+ CONFIG_USB_GADGET_DOWNLOAD=y
+-CONFIG_G_DNL_MANUFACTURER="DR"
+-CONFIG_G_DNL_VENDOR_NUM=0x0525
+-CONFIG_G_DNL_PRODUCT_NUM=0xa4a5
+ CONFIG_OF_LIBFDT=y
+ CONFIG_DEFAULT_FDT_FILE	"/boot/datarespons-vdt6010-revC-dl.dtb"
+ CONFIG_MX6_DDRCAL=y
+@@ -53,11 +56,9 @@ CONFIG_SPL_SERIAL_SUPPORT=y
+ CONFIG_SPL_LIBDISK_SUPPORT=y
+ CONFIG_SPL_WATCHDOG_SUPPORT=y
+ CONFIG_SPL_OS_BOOT=n
+-CONFIG_SPL_USB_GADGET_SUPPORT=n
++CONFIG_SPL_USB_GADGET=n
+ CONFIG_SPL_USB_SDP_SUPPORT=n
+ CONFIG_SPL_USB_HOST_SUPPORT=n
+-CONFIG_USB_GADGET_VENDOR_NUM=0x0525
+-CONFIG_USB_GADGET_PRODUCT_NUM=0xa4a5
+ CONFIG_SPL_SPI_FLASH_SUPPORT=y
+ CONFIG_SPL_SPI_SUPPORT=y
+ CONFIG_SPL_SPI_LOAD=y
+diff --git a/configs/vdt6010_factory_defconfig b/configs/vdt6010_factory_defconfig
+index 229ef2e630..cb36d543db 100644
+--- a/configs/vdt6010_factory_defconfig
++++ b/configs/vdt6010_factory_defconfig
+@@ -22,14 +22,17 @@ CONFIG_CMD_EXT4_WRITE=y
+ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
+ CONFIG_CMD_BMP=y
++CONFIG_CMD_SF=y
+ CONFIG_USB=y
+ CONFIG_USB_STORAGE=y
+ CONFIG_USB_GADGET=y
++CONFIG_USB_GADGET_VENDOR_NUM=0x15a2
++CONFIG_USB_GADGET_PRODUCT_NUM=0x1111
++CONFIG_USB_GADGET_MANUFACTURER="datarespons"
++CONFIG_SPI=y
++CONFIG_SPI_FLASH=y
+ CONFIG_CI_UDC=y
+ CONFIG_USB_GADGET_DOWNLOAD=y
+-CONFIG_G_DNL_MANUFACTURER="DR"
+-CONFIG_G_DNL_VENDOR_NUM=0x0525
+-CONFIG_G_DNL_PRODUCT_NUM=0xa4a5
+ CONFIG_OF_LIBFDT=y
+ CONFIG_DEFAULT_FDT_FILE	"/boot/datarespons-vdt6010-revC-dl.dtb"
+ CONFIG_MX6_DDRCAL=y
+@@ -53,11 +56,9 @@ CONFIG_SPL_SERIAL_SUPPORT=y
+ CONFIG_SPL_LIBDISK_SUPPORT=y
+ CONFIG_SPL_WATCHDOG_SUPPORT=y
+ CONFIG_SPL_OS_BOOT=n
+-CONFIG_SPL_USB_GADGET_SUPPORT=y
++CONFIG_SPL_USB_GADGET=y
+ CONFIG_SPL_USB_SDP_SUPPORT=y
+ CONFIG_SPL_USB_HOST_SUPPORT=y
+-CONFIG_USB_GADGET_VENDOR_NUM=0x0525
+-CONFIG_USB_GADGET_PRODUCT_NUM=0xa4a5
+ CONFIG_SPL_SPI_FLASH_SUPPORT=n
+ CONFIG_SPL_SPI_SUPPORT=n
+ CONFIG_SPL_SPI_LOAD=n
+diff --git a/include/configs/vdt6010.h b/include/configs/vdt6010.h
+index dd0f3b2b8f..5193d9659d 100644
+--- a/include/configs/vdt6010.h
++++ b/include/configs/vdt6010.h
+@@ -9,7 +9,7 @@
+ #ifndef __VDT6010_CONFIG_H
+ #define __VDT6010_CONFIG_H
+ /*
+-#ifndef CONFIG_SPL_BUILD
++#ifdef CONFIG_SPL_BUILD
+ #define DEBUG
+ #endif
+ */
+@@ -22,33 +22,33 @@
+ #define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR 512
+ #endif
+ 
+-
+-
+-/* u-boot offset in SPI FLASH */
+-#define CONFIG_SYS_SPI_U_BOOT_OFFS (256 * 1024)
+-#define CONFIG_CMD_SF
+-#define CONFIG_SPI_FLASH
++/* SPI flash */
+ #define CONFIG_SPI_FLASH_WINBOND
+ #define CONFIG_MXC_SPI
+ #define CONFIG_SF_DEFAULT_BUS		1
+ #define CONFIG_SF_DEFAULT_CS		0
+ #define CONFIG_SF_DEFAULT_SPEED		20000000
+ #define CONFIG_SF_DEFAULT_MODE		SPI_MODE_0
+-#define CONFIG_SPI_MEM /* Required for SPL build as of 2019.04 */
+ 
+-/* Flash and environment organization */
+-/*#define CONFIG_SYS_NO_FLASH*/
++/* Flash and environment organization
++ *
++ * Flash with 64k sector erase
++ *
++ * 0x0		~	0x400		- empty (1kb)
++ * 0x400	~	0x30000		- SPL	(191kb)
++ * 0x30000	~	0xF0000		- u-boot (768kb)
++ * 0xF0000	~	0x100000	- env (64kb)
++ * 0x100000	~	0x110000	- factory (64kb)
++ * 0x110000	~	0x400000	- user (3008kb)
++ */
++
++#define CONFIG_SYS_SPI_U_BOOT_OFFS	0x30000
++#define CONFIG_ENV_SIZE				0x10000
++/* env integrated in u-boot */
+ /*
+ #define CONFIG_ENV_OVERWRITE
+-#define CONFIG_ENV_IS_IN_SPI_FLASH
+-
+-#define CONFIG_ENV_SIZE			(64 * 1024)
+-#define CONFIG_ENV_SECT_SIZE 	(64 * 1024)
+-#define CONFIG_ENV_SPI_BUS             CONFIG_SF_DEFAULT_BUS
+-#define CONFIG_ENV_SPI_CS              CONFIG_SF_DEFAULT_CS
+-#define CONFIG_ENV_SPI_MODE            CONFIG_SF_DEFAULT_MODE
+-#define CONFIG_ENV_SPI_MAX_HZ          CONFIG_SF_DEFAULT_SPEED
+-#define CONFIG_ENV_OFFSET		(0xc0000)
++#define CONFIG_ENV_OFFSET			0xF0000
++#define CONFIG_ENV_SECT_SIZE		0x10000
+ */
+ 
+ #define CONFIG_MXC_UART_BASE	UART5_BASE
+@@ -74,7 +74,6 @@
+ 
+ #define CONFIG_IMX_THERMAL
+ 
+-/*#define CONFIG_SYS_GENERIC_BOARD*/
+ 
+ /* Size of malloc() pool */
+ #define CONFIG_SYS_MALLOC_LEN		(40 * SZ_1M)
+@@ -101,7 +100,6 @@
+ #define CONFIG_PHY_SMSC
+ 
+ /* allow to overwrite serial and ethaddr */
+-#define CONFIG_ENV_OVERWRITE
+ #define CONFIG_CONS_INDEX              1
+ #define CONFIG_BAUDRATE                        115200
+ 
+@@ -285,12 +283,6 @@
+ #define CONFIG_SYS_INIT_SP_ADDR \
+ 	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
+ 
+-/* FLASH and environment organization */
+-#define CONFIG_ENV_OVERWRITE
+-
+-
+-#define CONFIG_ENV_SIZE			(64 * 1024)
+-
+ #define CONFIG_PWM_IMX
+ #define CONFIG_IMX6_PWM_PER_CLK	66000000
+ #define CONFIG_SYS_I2C_MXC_I2C1

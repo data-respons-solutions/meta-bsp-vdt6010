@@ -1,0 +1,536 @@
+From 302bb6ce40ddfe0bdf207703c63e69b04d402119 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Mon, 13 May 2019 11:43:24 +0200
+Subject: [PATCH] DT rework, add display
+
+---
+ arch/arm/boot/dts/datarespons-vdt6010-revA.dts | 403 +++++++++++++------------
+ 1 file changed, 208 insertions(+), 195 deletions(-)
+
+diff --git a/arch/arm/boot/dts/datarespons-vdt6010-revA.dts b/arch/arm/boot/dts/datarespons-vdt6010-revA.dts
+index 41f819e43365..bc958c4ad094 100644
+--- a/arch/arm/boot/dts/datarespons-vdt6010-revA.dts
++++ b/arch/arm/boot/dts/datarespons-vdt6010-revA.dts
+@@ -16,58 +16,101 @@
+ #include <dt-bindings/input/input.h>
+ #include "imx6q.dtsi"
+ 
+-//FIXME: compatible ="datarespons,imx"
++
++//FIXME: GPIOS
++// PCIE_RST_B
++// RS422EN2
++// RS485EN2
++// RS232EN2
++// GPIO_Debug_LED
++// MMC_RST# -> emmc
++// MCU_NRST
++// Touch_Rest
++// RMII_nRST
++// LANA_ETHER_SPEED_LED
++// LANA_ETHER_LINK_ACT_LEDn
++
++// HDMI_SCL - HDMI_SDA - HDMI_DDC_CEC - HDMI_HPD
+ 
+ / {
+     model = "Data Respons Solutions VDT6010 (rev A - dual/quad)";
+-    compatible = "datarespons", "fsl,imx6q";
++    compatible = "fsl,imx6q";
+ 
+-	memory: memory {
+-		reg = <0x10000000 0x40000000>;
+-	};
+-		
+ 	aliases {
+ 		mxcfb0 = &mxcfb1;
+ 		mxcfb1 = &mxcfb2;
+-		mxcfb2 = &mxcfb3;
+-		mxcfb3 = &mxcfb4;
+ 	};
+ 	
+-	backlight {
+-		compatible = "pwm-backlight";
+-		pwms = <&pwm1 0 500000>;
+-		brightness-levels = <0 32 64 96 128 255>;
+-		default-brightness-level = <5>;
+-		status = "okay";
++	memory: memory {
++		reg = <0x10000000 0x40000000>;
+ 	};
+-
++	
+ 	regulators {
+ 		compatible = "simple-bus";
+-
+-	/*
+-        regulator@0 {
+-            gpio = <&gpio4 15 0>;
+-        };
+-    */
+ 		
+-		reg_usb_otg_vbus: regulator@0 {
++		reg_usb_otg_vbus: usb_otg_vbus {
+ 			compatible = "regulator-fixed";
+ 			regulator-name = "usb_otg_vbus";
+ 			regulator-min-microvolt = <5000000>;
+ 			regulator-max-microvolt = <5000000>;
+-			gpio = <&gpio3 22 0>;
++			gpio = <&gpio4 15 GPIO_ACTIVE_HIGH>;
+ 			enable-active-high;
+ 		};
+ 
+-		reg_usb_h1_vbus: regulator@1 {
++		reg_usb_p0_vbus: usb_p0_vbus {
++			compatible = "regulator-fixed";
++			regulator-name = "usb_p0_vbus";
++			regulator-min-microvolt = <5000000>;
++			regulator-max-microvolt = <5000000>;
++			gpio = <&gpio5 15 GPIO_ACTIVE_HIGH>;
++			enable-active-high;
++		};
++		
++		reg_usb_p1_vbus: usb_p1_vbus {
+ 			compatible = "regulator-fixed";
+-			regulator-name = "usb_h1_vbus";
++			regulator-name = "usb_p1_vbus";
+ 			regulator-min-microvolt = <5000000>;
+ 			regulator-max-microvolt = <5000000>;
+-			gpio = <&gpio1 29 0>;
++			gpio = <&gpio5 16 GPIO_ACTIVE_HIGH>;
++			enable-active-high;
++		};
++		
++		reg_lcd_vdd: lcd_vdd {
++			compatible = "regulator-fixed";
++			regulator-name = "lcd_vdd";
++			regulator-min-microvolt = <3300000>;
++			regulator-max-microvolt = <3300000>;
++			gpio = <&gpio1 6 GPIO_ACTIVE_HIGH>;
++			enable-active-high;
++		};
++		
++		reg_lcd_backlight: lcd_backlight {
++			compatible = "regulator-fixed";
++			regulator-name = "lcd_backlight";
++			regulator-min-microvolt = <12000000>;
++			regulator-max-microvolt = <12000000>;
++			gpio = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+ 			enable-active-high;
+ 		};
++		
++	};
++	
++	backlight {
++		compatible = "pwm-backlight";
++		pwms = <&pwm1 0 500000>;
++        brightness-levels = < 0 1 2 3 4 5 6 8  11 16  23  32 48
++                              64 81 100 121 144 169 196 225
++                              256 289 324 361 400 441 484 529
++                              576 625 676 729 784 841 900 961
++                              1024 1089 1156 1225 1296 1369 1444 1521
++                              1600 1681 1764 1849 1936 2025 2116 2209 >;
++		default-brightness-level = <32>;
++		enable-gpios = <&gpio7 12 GPIO_ACTIVE_HIGH>;
++		power-supply = <&reg_lcd_backlight>;
++		status = "okay";
+ 	};
++
++	
+ 	
+ 	leds {
+ 		compatible = "gpio-leds";
+@@ -91,7 +134,7 @@
+ 		};
+ 	};
+ 	
+-	user-gpios {	
++	user-gpios {		
+         gpio1 {
+ 			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
+ 			status = "okay";
+@@ -137,13 +180,20 @@
+         	status = "okay";
+         	value = <1>;
+         };
++        
++        usb_hub_rst {
++        	gpios = <&gpio4 5 GPIO_ACTIVE_LOW>;
++        	status = "okay";
++        	value = <0>;
++		};
++        
+ 	};
+ 	
+ 	mxcfb1: fb@0 {
+ 		compatible = "fsl,mxc_sdc_fb";
+ 		disp_dev = "ldb";
+-		interface_pix_fmt = "RGB666";
+-		default_bpp = <16>;
++		interface_pix_fmt = "RGB24";
++		default_bpp = <32>;
+ 		int_clk = <0>;
+ 		late_init = <0>;
+ 		status = "okay";
+@@ -154,28 +204,7 @@
+ 		disp_dev = "hdmi";
+ 		interface_pix_fmt = "RGB24";
+ 		mode_str ="1920x1080M@60";
+-		default_bpp = <24>;
+-		int_clk = <0>;
+-		late_init = <0>;
+-		status = "okay";
+-	};
+-
+-	mxcfb3: fb@2 {
+-		compatible = "fsl,mxc_sdc_fb";
+-		disp_dev = "lcd";
+-		interface_pix_fmt = "RGB565";
+-		mode_str ="CLAA-WVGA";
+-		default_bpp = <16>;
+-		int_clk = <0>;
+-		late_init = <0>;
+-		status = "okay";
+-	};
+-
+-	mxcfb4: fb@3 {
+-		compatible = "fsl,mxc_sdc_fb";
+-		disp_dev = "ldb";
+-		interface_pix_fmt = "RGB666";
+-		default_bpp = <16>;
++		default_bpp = <32>;
+ 		int_clk = <0>;
+ 		late_init = <0>;
+ 		status = "okay";
+@@ -200,127 +229,8 @@
+ 	reg = <0x10000000 0x80000000>;	
+ };
+ 
+-&ldb {
+-	status = "okay";
+-	
+-	lvds-channel@0 {
+-		fsl,data-mapping = "spwg";
+-		fsl,data-width = <18>;
+-		crtc = "ipu1-di0";
+-		status = "disabled";
+-
+-		display-timings {
+-			native-mode = <&timing0>;
+-			timing0: hsd100pxn1 {
+-				clock-frequency = <65000000>;
+-				hactive = <1024>;
+-				vactive = <768>;
+-				hback-porch = <220>;
+-				hfront-porch = <40>;
+-				vback-porch = <21>;
+-				vfront-porch = <7>;
+-				hsync-len = <60>;
+-				vsync-len = <10>;
+-			};
+-		};
+-	};
+-
+-	lvds-channel@1 {
+-		fsl,data-mapping = "spwg";
+-		fsl,data-width = <18>;
+-		primary;
+-		crtc = "ipu1-di0";
+-		fsl,data-width = <18>;
+-		status = "okay";
+-		
+-		display-timings {
+-			native-mode = <&timing1>;
+-
+-			timing1: ot070uaddbt-00 {
+-					clock-frequency = <51200000>;
+-					hactive = <1024>;
+-					vactive = <600>;
+-					hback-porch = <100>;
+-					hfront-porch = <260>;
+-					vback-porch = <10>;
+-					vfront-porch = <25>;
+-					hsync-len = <1>;
+-					vsync-len = <1>;
+-			};
+-			timing3: LG-LB070WV8 {
+-					clock-frequency = <33260000>;
+-					hactive = <800>;
+-					vactive = <480>;
+-					hback-porch = <100>;
+-					hfront-porch = <100>;
+-					vback-porch = <20>;
+-					vfront-porch = <20>;
+-					hsync-len = <56>;
+-					vsync-len = <5>;
+-			};
+-			timing4: AM-800480R3TMQW-T31H {
+-					clock-frequency = <33260000>;
+-					hactive = <800>;
+-					vactive = <480>;
+-					hback-porch = <100>;
+-					hfront-porch = <100>;
+-					vback-porch = <20>;
+-					vfront-porch = <20>;
+-					hsync-len = <56>;
+-					vsync-len = <5>;
+-			};
+-			timing5: M101NWWB_R3 {
+-					clock-frequency = <71100000>;
+-					hactive = <1280>;
+-					vactive = <800>;
+-					hback-porch = <50>;
+-					hfront-porch = <50>;
+-					vback-porch = <10>;
+-					vfront-porch = <10>;
+-					hsync-len = <60>;
+-					vsync-len = <3>;
+-			};
+-		};
+-	};
+-};
+-
+-&pwm1 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_pwm1>;
+-	status = "okay";
+-};
+-
+-/*
+-&hdmi_cec {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_hdmi_cec>;
+-	status = "okay";
+-};
+-
+-&hdmi_core {
+-	ipu_id = <0>;
+-	disp_id = <0>;
+-	status = "okay";
+-};
+-
+-&hdmi_video {
+-	fsl,phy_reg_vlev = <0x0294>;
+-	fsl,phy_reg_cksymtx = <0x800d>;
+-	status = "okay";
+-};
+-
+-&hdmi_audio {
+-	status = "okay";
+-};
+-*/
+-
+-&ssi2 {
+-	fsl,mode = "i2s-slave";
+-	status = "okay";
+-};
+-
+ &ecspi2 {
+-	//fsl,spi-num-chipselects = <1>;
++	fsl,spi-num-chipselects = <1>;
+ 	cs-gpios = <&gpio5 29 GPIO_ACTIVE_LOW>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_ecspi2>;
+@@ -332,6 +242,21 @@
+ 		compatible = "winbond,w25x40", "jedec,spi-nor";
+ 		spi-max-frequency = <20000000>;
+ 		reg = <0>;
++		
++		partition@0 {
++			label = "empty";
++			reg = <0 0x400>;
++		};
++		
++		spl@400 {
++			label = "spl";
++			reg = <0x400 0x40000>;
++		};
++		
++		uboot@40000 {
++			label = "uboot";
++			reg = <0x40000 0x13a000>;
++		};
+ 	};
+ };
+ 
+@@ -491,6 +416,19 @@
+ 	};
+ };
+ 
++
++
++&pwm1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm1>;
++	status = "okay";
++};
++
++&ssi2 {
++	fsl,mode = "i2s-slave";
++	status = "okay";
++};
++
+ &pmic {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_pmic>;
+@@ -525,8 +463,8 @@
+ 	pinctrl-names = "default";
+     pinctrl-0 = <&pinctrl_enet>;
+     phy-mode = "rmii";
+-    phy-reset-gpios = <&gpio6 14 0>;
+-	fsl,magic-packet;
++    phy-reset-gpios = <&gpio6 14 GPIO_ACTIVE_HIGH>; /* FIXME: ska de va ACTIVE_HIGH? */
++	/*fsl,magic-packet; FIXME: vad är detta */
+ 	status = "okay";
+ };
+ 
+@@ -595,21 +533,32 @@
+     hog {
+         pinctrl_hog_1: hoggrp-1 {
+ 			fsl,pins = <
+-				MX6QDL_PAD_KEY_ROW1__GPIO4_IO09		0xC0000000 //RS232EN2
+-				MX6QDL_PAD_KEY_COL2__GPIO4_IO10		0xC0000000 //RS422EN2
+-				MX6QDL_PAD_KEY_ROW2__GPIO4_IO11		0xC0000000 //RS485EN2
++				/* regulators */
++				MX6QDL_PAD_KEY_ROW4__GPIO4_IO15		0x00002060 /* USB_OTG_PWR_EN */
++				MX6QDL_PAD_DISP0_DAT21__GPIO5_IO15	0x00002060 /* USB_PWR_EN1 */
++				MX6QDL_PAD_DISP0_DAT22__GPIO5_IO16	0x00002060 /* USB_PWR_EN2 */
++				MX6QDL_PAD_GPIO_6__GPIO1_IO06		0x00002060 /* LCD_VDD_EN  */
++				MX6QDL_PAD_GPIO_5__GPIO1_IO05		0x00002060 /* LED_VCC_EN  */
++				
++				/* display */
++				MX6QDL_PAD_GPIO_17__GPIO7_IO12		0x00002060 /* LED_EN */
++				MX6QDL_PAD_DISP0_DAT17__GPIO5_IO11	0xC0000000 /* Touch_INT */
++				MX6QDL_PAD_DISP0_DAT18__GPIO5_IO12	0x00002060 /* Touch_Rest */
++				
++				MX6QDL_PAD_KEY_ROW1__GPIO4_IO09		0x00002060 //RS232EN2
++				MX6QDL_PAD_KEY_COL2__GPIO4_IO10		0x00002060 //RS422EN2
++				MX6QDL_PAD_KEY_ROW2__GPIO4_IO11		0x00002060 //RS485EN2
+ 				MX6QDL_PAD_GPIO_3__GPIO1_IO03		0x40000000 //RTC_IRQ
+-				MX6QDL_PAD_KEY_ROW4__GPIO4_IO15         0x80000000 //USB_OTG_PWR_EN
++				
+ 				MX6QDL_PAD_GPIO_9__GPIO1_IO09		0xC0000000 //LAN8710 ENET_IRQ#
+-				MX6QDL_PAD_DISP0_DAT21__GPIO5_IO15	0xC0000000 /*  USB_PWR_EN1 */
+-				MX6QDL_PAD_DISP0_DAT22__GPIO5_IO16	0xC0000000 /*  USB_PWR_EN2 */
+-				MX6QDL_PAD_GPIO_6__GPIO1_IO06		0xC0000000 /*  LCD_VDD_EN  */
+-				MX6QDL_PAD_GPIO_5__GPIO1_IO05		0xC0000000 /*  LED_VCC_EN  */
+-				MX6QDL_PAD_GPIO_17__GPIO7_IO12		0xC0000000 /*  LED_EN 	   */
++
++				MX6QDL_PAD_DISP0_DAT23__GPIO5_IO17	0x00002060 /* USB_HUB_RST */
++				
++				
++				
+ 				MX6QDL_PAD_GPIO_0__GPIO1_IO00		0xC0000000 /*  GPIO_MCU   */
+ 				MX6QDL_PAD_DISP0_DAT19__GPIO5_IO13	0x4001b0b0 /*  CPU_GPIO_OUT    */
+-				MX6QDL_PAD_DISP0_DAT17__GPIO5_IO11	0xC0000000 /*  Touch_INT   */
+-				MX6QDL_PAD_DISP0_DAT18__GPIO5_IO12	0xC0000000 /*  Touch_Rest  */
++
+ 				
+ 				
+ 				// gpio default config as inputs
+@@ -637,16 +586,17 @@
+ 		/* For LAN8710 (10/100M RMII)*/
+ 		pinctrl_enet: enetgrp {
+ 			fsl,pins = <
+-				MX6QDL_PAD_ENET_MDIO__ENET_MDIO       0x1b0b0
+-				MX6QDL_PAD_ENET_MDC__ENET_MDC         0x1b0b0
+-				MX6QDL_PAD_ENET_CRS_DV__ENET_RX_EN    0x1b0b0
+-				MX6QDL_PAD_ENET_RX_ER__ENET_RX_ER     0x1b0b0
+-				MX6QDL_PAD_ENET_TX_EN__ENET_TX_EN     0x1b0b0
+-				MX6QDL_PAD_ENET_RXD0__ENET_RX_DATA0   0x1b0b0
+-				MX6QDL_PAD_ENET_RXD1__ENET_RX_DATA1   0x1b0b0
+-				MX6QDL_PAD_ENET_TXD0__ENET_TX_DATA0   0x1b0b0
+-				MX6QDL_PAD_ENET_TXD1__ENET_TX_DATA1   0x1b0b0
+-				MX6QDL_PAD_GPIO_16__ENET_REF_CLK      0x4001b0a8
++				MX6QDL_PAD_ENET_MDIO__ENET_MDIO		0x1b0b0
++				MX6QDL_PAD_ENET_MDC__ENET_MDC		0x1b0b0
++				MX6QDL_PAD_ENET_CRS_DV__ENET_RX_EN	0x1b0b0
++				MX6QDL_PAD_ENET_RX_ER__ENET_RX_ER	0x1b0b0
++				MX6QDL_PAD_ENET_TX_EN__ENET_TX_EN	0x1b0b0
++				MX6QDL_PAD_ENET_RXD0__ENET_RX_DATA0	0x1b0b0
++				MX6QDL_PAD_ENET_RXD1__ENET_RX_DATA1	0x1b0b0
++				MX6QDL_PAD_ENET_TXD0__ENET_TX_DATA0	0x1b0b0
++				MX6QDL_PAD_ENET_TXD1__ENET_TX_DATA1	0x1b0b0
++				MX6QDL_PAD_GPIO_16__ENET_REF_CLK	0x4001b0a8
++				MX6QDL_PAD_NANDF_CS1__GPIO6_IO14	0x00002060 /* RMII_nRST */
+ 			>;
+ 		};
+ 
+@@ -735,7 +685,7 @@
+ 
+ 		pinctrl_pwm1: pwm1grp {
+ 			fsl,pins = <
+-				MX6QDL_PAD_SD1_DAT3__PWM1_OUT		0x1b0b1
++				MX6QDL_PAD_SD1_DAT3__PWM1_OUT	0x1b0b1 /* PWM1_Panel */
+ 			>;
+ 		};
+ 
+@@ -759,6 +709,69 @@
+ 	};
+ };
+ 
++&ldb {
++	status = "okay";
++	
++	lvds-channel@0 {
++		fsl,data-mapping = "spwg";
++		fsl,data-width = <24>;
++		crtc = "ipu2-di0";
++		status = "disabled";
++	};
++
++	lvds-channel@1 {
++		fsl,data-mapping = "spwg";
++		fsl,data-width = <24>;
++		primary;
++		crtc = "ipu1-di1";
++		fsl,data-width = <18>;
++		status = "okay";
++		
++		display-timings {
++			native-mode = <&timing0>;
++			timing0: AM-1280800NTZQW-T10H {
++					/*
++					* Tv = hactive + hback-porch + hfront-porch + hsync-len
++					* Th = vactive + vback-porch + vfront-porch + vsync-len
++					*/
++					clock-frequency = <71100000>;
++					hactive = <1280>;
++					vactive = <800>;
++					hback-porch = <50>;
++					hfront-porch = <50>;
++					vback-porch = <10>;
++					vfront-porch = <10>;
++					hsync-len = <60>;
++					vsync-len = <3>;
++			};
++		};
++	};
++};
++
++/*
++&hdmi_cec {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_hdmi_cec>;
++	status = "okay";
++};
++
++&hdmi_core {
++	ipu_id = <0>;
++	disp_id = <0>;
++	status = "okay";
++};
++
++&hdmi_video {
++	fsl,phy_reg_vlev = <0x0294>;
++	fsl,phy_reg_cksymtx = <0x800d>;
++	status = "okay";
++};
++
++&hdmi_audio {
++	status = "okay";
++};
++*/
++
+ &dcic1 {
+ 	dcic_id = <0>;
+ 	dcic_mux = "dcic-hdmi";

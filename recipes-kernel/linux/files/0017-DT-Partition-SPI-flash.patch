@@ -1,0 +1,49 @@
+From d1bd9b325af071b56fc6b41a20052043ded4c139 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Tue, 4 Jun 2019 16:38:17 +0200
+Subject: [PATCH] DT: Partition SPI flash
+
+---
+ arch/arm/boot/dts/datarespons-vdt6010-revA.dts | 29 +++++++++++++++++++++++---
+ 1 file changed, 26 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/datarespons-vdt6010-revA.dts b/arch/arm/boot/dts/datarespons-vdt6010-revA.dts
+index 859dc4b2ef86..a939b669fac7 100644
+--- a/arch/arm/boot/dts/datarespons-vdt6010-revA.dts
++++ b/arch/arm/boot/dts/datarespons-vdt6010-revA.dts
+@@ -251,9 +251,32 @@
+ 		spi-max-frequency = <20000000>;
+ 		reg = <0>;
+ 		
+-		uboot@0 {
+-			label ="uboot";
+-			reg = <0x0 0xc0000>;
++		spl@0x0 {
++			label = "spl";
++			reg = <0x0 0x30000>;
++		};
++		
++		u-boot@0x30000 {
++			label = "u-boot";
++			reg = <0x30000 0xF0000>;
++		};
++		
++		/*
++		* env integrated in u-boot
++		*
++		env@0xF0000 {
++			label = "env";
++			reg = <0xF0000 0x100000>;
++		};
++		*/
++		factory@0x100000 {
++			label = "factory";
++			reg = <0x100000 0x110000>;
++		};
++		
++		user@0x110000 {
++			label = "user";
++			reg = <0x110000 0x400000>;
+ 		};
+ 	};
+ };

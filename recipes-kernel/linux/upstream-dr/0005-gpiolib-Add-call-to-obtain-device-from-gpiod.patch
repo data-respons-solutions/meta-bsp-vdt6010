@@ -1,0 +1,86 @@
+From d91672b81dbdce586697eb3f0f74121b4c4516f6 Mon Sep 17 00:00:00 2001
+From: Hans Christian Lonstad <hcl@datarespons.no>
+Date: Thu, 23 Aug 2018 13:04:44 +0200
+Subject: [PATCH 05/11] gpiolib: Add call to obtain device from gpiod
+
+Enables udev event support for state changes
+---
+ drivers/gpio/gpiolib-sysfs.c  | 7 +++----
+ drivers/gpio/gpiolib.c        | 6 ++++++
+ drivers/gpio/gpiolib.h        | 1 +
+ include/linux/gpio/consumer.h | 2 +-
+ 4 files changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/gpio/gpiolib-sysfs.c b/drivers/gpio/gpiolib-sysfs.c
+index 3f454eaf2101..cbf46802debf 100644
+--- a/drivers/gpio/gpiolib-sysfs.c
++++ b/drivers/gpio/gpiolib-sysfs.c
+@@ -561,7 +561,6 @@ int gpiod_export(struct gpio_desc *desc, bool direction_may_change)
+ 	unsigned long		flags;
+ 	int			status;
+ 	const char		*ioname = NULL;
+-	struct device		*dev;
+ 	int			offset;
+ 
+ 	/* can't export until sysfs is available ... */
+@@ -616,12 +615,12 @@ int gpiod_export(struct gpio_desc *desc, bool direction_may_change)
+ 	if (chip->names && chip->names[offset])
+ 		ioname = chip->names[offset];
+ 
+-	dev = device_create_with_groups(&gpio_class, &gdev->dev,
++	desc->dev = device_create_with_groups(&gpio_class, &gdev->dev,
+ 					MKDEV(0, 0), data, gpio_groups,
+ 					ioname ? ioname : "gpio%u",
+ 					desc_to_gpio(desc));
+-	if (IS_ERR(dev)) {
+-		status = PTR_ERR(dev);
++	if (IS_ERR(desc->dev)) {
++		status = PTR_ERR(desc->dev);
+ 		goto err_free_data;
+ 	}
+ 
+diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
+index 21062cb6b85f..ce2c05adf0fc 100644
+--- a/drivers/gpio/gpiolib.c
++++ b/drivers/gpio/gpiolib.c
+@@ -2789,6 +2789,12 @@ int gpiod_to_irq(const struct gpio_desc *desc)
+ }
+ EXPORT_SYMBOL_GPL(gpiod_to_irq);
+ 
++struct device *gpiod_to_dev(const struct gpio_desc *desc)
++{
++	return desc->dev;
++}
++EXPORT_SYMBOL_GPL(gpiod_to_dev);
++
+ /**
+  * gpiochip_lock_as_irq() - lock a GPIO to be used as IRQ
+  * @chip: the chip the GPIO to lock belongs to
+diff --git a/drivers/gpio/gpiolib.h b/drivers/gpio/gpiolib.h
+index 7a3d9658d74c..41fcf760034b 100644
+--- a/drivers/gpio/gpiolib.h
++++ b/drivers/gpio/gpiolib.h
+@@ -207,6 +207,7 @@ struct gpio_desc {
+ 	const char		*label;
+ 	/* Name of the GPIO */
+ 	const char		*name;
++	struct device	*dev;
+ };
+ 
+ int gpiod_request(struct gpio_desc *desc, const char *label);
+diff --git a/include/linux/gpio/consumer.h b/include/linux/gpio/consumer.h
+index c4a350d83578..5e007ad2e377 100644
+--- a/include/linux/gpio/consumer.h
++++ b/include/linux/gpio/consumer.h
+@@ -127,7 +127,7 @@ int gpiod_is_active_low(const struct gpio_desc *desc);
+ int gpiod_cansleep(const struct gpio_desc *desc);
+ 
+ int gpiod_to_irq(const struct gpio_desc *desc);
+-
++struct device* gpiod_to_dev(const struct gpio_desc *desc);
+ /* Convert between the old gpio_ and new gpiod_ interfaces */
+ struct gpio_desc *gpio_to_desc(unsigned gpio);
+ int desc_to_gpio(const struct gpio_desc *desc);
+-- 
+2.17.1
+

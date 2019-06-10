@@ -1,0 +1,208 @@
+From 25ad72c8c9352445d4011454c84667cef44243c6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Thu, 18 Apr 2019 15:39:04 +0200
+Subject: [PATCH] Add Datarespons common
+
+---
+ board/datarespons/common/dev/pfuze100.c    | 99 ++++++++++++++++++++++++++++++
+ board/datarespons/common/dev/pfuze100.h    | 14 +++++
+ board/datarespons/common/mx6_common_defs.h | 63 +++++++++++++++++++
+ 3 files changed, 176 insertions(+)
+ create mode 100644 board/datarespons/common/dev/pfuze100.c
+ create mode 100644 board/datarespons/common/dev/pfuze100.h
+ create mode 100644 board/datarespons/common/mx6_common_defs.h
+
+diff --git a/board/datarespons/common/dev/pfuze100.c b/board/datarespons/common/dev/pfuze100.c
+new file mode 100644
+index 0000000000..a22976ef44
+--- /dev/null
++++ b/board/datarespons/common/dev/pfuze100.c
+@@ -0,0 +1,99 @@
++
++#include <common.h>
++#include <i2c.h>
++#include <power/pfuze100_pmic.h>
++#include <linux/errno.h>
++#include "pfuze100.h"
++
++struct {
++	pf100_regs	reg;
++	char		*desc;
++} reg_table[] = {
++		{SW1AB, "SW1AB"},
++		{SW1C, "SW1C"},
++		{SW3AB, "SW3AB"},
++		{VGEN4, "VGEN4"},
++		{0, NULL}
++};
++
++char *pf100_reg_str(pf100_regs reg)
++{
++	for (int i = 0; reg_table[i].desc; ++i) {
++		if (reg_table[i].reg == reg) {
++			return reg_table[i].desc;
++		}
++	}
++
++	return NULL;
++}
++
++int pfuze100_setup(int i2c_bus, int addr)
++{
++	int ret = 0;
++
++	i2c_set_bus_num(i2c_bus);
++	ret = i2c_probe(addr);
++	if (ret)
++	{
++		return -ENODEV;
++	}
++
++	return 0;
++}
++
++int pfuze100_set(int i2c_bus, int addr, pf100_regs reg, int mV)
++{
++	u8 values[2] = {0, 0};
++
++	i2c_set_bus_num(i2c_bus);
++	switch (reg) {
++	case SW1AB:
++		if ((mV < 300) || (mV > 1875)) {
++			return -EINVAL;
++		}
++		values[0] = (mV - 300) / 25;
++		if(i2c_write(addr, PFUZE100_SW1ABVOL, 1, values, 1)) {
++			return -EIO;
++		}
++		break;
++
++	case SW1C:
++		if ((mV < 300) || (mV > 1875)) {
++			return -EINVAL;
++		}
++		values[0] = (mV - 300) / 25;
++		if (i2c_write(addr, PFUZE100_SW1CVOL, 1, values, 1)) {
++			return -EIO;
++		}
++		break;
++
++	case SW3AB:
++		if ((mV < 400) || (mV > 3300)) {
++			return -EINVAL;
++		}
++		values[0] = (mV - 400) / 25;
++		if (i2c_write(addr, PFUZE100_SW3AVOL, 1, values, 1)) {
++			return -EIO;
++		}
++		if (i2c_write(addr, PFUZE100_SW3BVOL, 1, values, 1)) {
++			return -EIO;
++		}
++		break;
++
++	case VGEN4:
++		if ((mV < 1800) || (mV > 3300)) {
++			return -EINVAL;
++		}
++		values[0] = ((mV - 1800) * 15) / 1500;
++		if (i2c_write(addr, PFUZE100_VGEN4VOL, 1, values, 1)) {
++			return -EIO;
++		}
++		break;
++
++	default:
++		return -ENODEV;
++		break;
++	}
++
++	return 0;
++}
+diff --git a/board/datarespons/common/dev/pfuze100.h b/board/datarespons/common/dev/pfuze100.h
+new file mode 100644
+index 0000000000..c0de908d1d
+--- /dev/null
++++ b/board/datarespons/common/dev/pfuze100.h
+@@ -0,0 +1,14 @@
++
++#ifndef __DR_PFUZE100__H__
++#define __DR_PFUZE100__H__
++
++
++typedef enum { SW1AB = 1, SW1C, SW3AB, VGEN4 } pf100_regs;
++
++char *pf100_reg_str(pf100_regs reg);
++
++int pfuze100_setup(int i2c_bus, int addr);
++int pfuze100_set(int i2c_bus, int addr, pf100_regs reg, int mV);
++
++
++#endif // __DR_PFUZE100__H__
+diff --git a/board/datarespons/common/mx6_common_defs.h b/board/datarespons/common/mx6_common_defs.h
+new file mode 100644
+index 0000000000..dbfa71f32d
+--- /dev/null
++++ b/board/datarespons/common/mx6_common_defs.h
+@@ -0,0 +1,63 @@
++#ifndef __MX6_COMMON_DEFS_H__
++#define __MX6_COMMON_DEFS_H__
++
++#define UART_PAD_CTRL  (PAD_CTL_PUS_100K_UP |			\
++	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm |			\
++	PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
++#define USDHC_PAD_CTRL (PAD_CTL_PUS_47K_UP |			\
++	PAD_CTL_SPEED_LOW | PAD_CTL_DSE_80ohm |			\
++	PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
++#define ENET_PAD_CTRL  (PAD_CTL_PUS_100K_UP |			\
++	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS)
++
++#define SPI_PAD_CTRL (PAD_CTL_HYS | PAD_CTL_SPEED_MED | \
++		      PAD_CTL_DSE_40ohm | PAD_CTL_SRE_FAST)
++
++#define I2C_PAD_CTRL  (PAD_CTL_PUS_100K_UP |			\
++	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS |	\
++	PAD_CTL_ODE | PAD_CTL_SRE_FAST)
++
++#define SLOWOUT_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_LOW   |		\
++	PAD_CTL_DSE_40ohm   | PAD_CTL_HYS)
++
++#define PAD_CTRL_ODE_NOPULL (PAD_CTL_SPEED_LOW | PAD_CTL_DSE_40ohm | PAD_CTL_ODE)
++
++#define OUT_LOW_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_100K_DOWN | PAD_CTL_SPEED_LOW   |		\
++	PAD_CTL_DSE_40ohm   | PAD_CTL_HYS)
++
++#define REGINP_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_LOW   |		\
++	PAD_CTL_DSE_DISABLE  | PAD_CTL_HYS)
++
++#define INPUT_PD_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_100K_DOWN | PAD_CTL_SPEED_LOW   |		\
++	PAD_CTL_DSE_DISABLE  | PAD_CTL_HYS)
++
++#define ENET_PAD_CTRL_UP  (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED   |		\
++	PAD_CTL_DSE_40ohm   | PAD_CTL_HYS)
++
++#define ENET_PAD_CTRL_DN  (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_100K_DOWN | PAD_CTL_SPEED_MED   |		\
++	PAD_CTL_DSE_40ohm   | PAD_CTL_HYS)
++
++#define WEAK_PULLUP	(PAD_CTL_PUS_100K_UP |			\
++	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS |	\
++	PAD_CTL_SRE_SLOW)
++
++#define NO_PULLUP	(					\
++	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS |	\
++	PAD_CTL_SRE_SLOW)
++
++#define WEAK_PULLDOWN	(PAD_CTL_PUS_100K_DOWN |		\
++	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm |			\
++	PAD_CTL_HYS | PAD_CTL_SRE_SLOW)
++
++#define OC_SLOW_PAD_CTRL (PAD_CTL_ODE | SLOWOUT_PAD_CTRL)
++#define I2C_PAD MUX_PAD_CTRL(I2C_PAD_CTRL)
++
++#endif

@@ -1,0 +1,298 @@
+From dd2185608c8714660e148db3d0d053231a2e86f6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Tue, 7 May 2019 15:06:56 +0200
+Subject: [PATCH] devicetree fixes
+
+---
+ arch/arm/boot/dts/datarespons-vdt6010-revA.dts | 140 +++++++++++++++++--------
+ 1 file changed, 98 insertions(+), 42 deletions(-)
+
+diff --git a/arch/arm/boot/dts/datarespons-vdt6010-revA.dts b/arch/arm/boot/dts/datarespons-vdt6010-revA.dts
+index 212536ae33dd..41f819e43365 100644
+--- a/arch/arm/boot/dts/datarespons-vdt6010-revA.dts
++++ b/arch/arm/boot/dts/datarespons-vdt6010-revA.dts
+@@ -12,6 +12,7 @@
+ 
+ /dts-v1/;
+ 
++#include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/input/input.h>
+ #include "imx6q.dtsi"
+ 
+@@ -19,21 +20,12 @@
+ 
+ / {
+     model = "Data Respons Solutions VDT6010 (rev A - dual/quad)";
+-    compatible = "datarespons,imx", "fsl,imx6q";
++    compatible = "datarespons", "fsl,imx6q";
+ 
+ 	memory: memory {
+ 		reg = <0x10000000 0x40000000>;
+ 	};
+-	
+-	leds {
+-		compatible = "gpio-leds";
+-
+-		debug-led {
+-			gpios = <&gpio7 8 0>;
+-			default-state = "off";
+-		};
+-	};
+-	
++		
+ 	aliases {
+ 		mxcfb0 = &mxcfb1;
+ 		mxcfb1 = &mxcfb2;
+@@ -52,13 +44,14 @@
+ 	regulators {
+ 		compatible = "simple-bus";
+ 
++	/*
+         regulator@0 {
+             gpio = <&gpio4 15 0>;
+         };
++    */
+ 		
+ 		reg_usb_otg_vbus: regulator@0 {
+ 			compatible = "regulator-fixed";
+-			reg = <0>;
+ 			regulator-name = "usb_otg_vbus";
+ 			regulator-min-microvolt = <5000000>;
+ 			regulator-max-microvolt = <5000000>;
+@@ -68,7 +61,6 @@
+ 
+ 		reg_usb_h1_vbus: regulator@1 {
+ 			compatible = "regulator-fixed";
+-			reg = <1>;
+ 			regulator-name = "usb_h1_vbus";
+ 			regulator-min-microvolt = <5000000>;
+ 			regulator-max-microvolt = <5000000>;
+@@ -77,6 +69,15 @@
+ 		};
+ 	};
+ 	
++	leds {
++		compatible = "gpio-leds";
++
++		debug-led {
++			label = "debug";
++			gpios = <&gpio7 8 GPIO_ACTIVE_HIGH>;
++		};
++	};
++	
+ 	gpio-keys {
+ 		compatible = "gpio-keys";
+ 		pinctrl-names = "default";
+@@ -84,12 +85,60 @@
+ 
+ 		power {
+ 			label = "Power Button";
+-			gpios = <&gpio3 29 1>;
++			gpios = <&gpio3 29 GPIO_ACTIVE_LOW>;
+ 			gpio-key,wakeup;
+ 			linux,code = <KEY_POWER>;
+ 		};
+ 	};
+ 	
++	user-gpios {	
++        gpio1 {
++			gpios = <&gpio4 30 GPIO_ACTIVE_HIGH>;
++			status = "okay";
++        };
++        
++        gpio2 {
++			gpios = <&gpio4 31 GPIO_ACTIVE_HIGH>;
++			status = "okay";
++        };
++        
++        gpio3 {
++			gpios = <&gpio5 5 GPIO_ACTIVE_HIGH>;
++			status = "okay";
++        };
++        
++        gpio4 {
++			gpios = <&gpio5 6 GPIO_ACTIVE_HIGH>;
++			status = "okay";
++        };
++        
++        gpio5 {
++			gpios = <&gpio5 7 GPIO_ACTIVE_HIGH>;
++			status = "okay";
++        };
++        
++        gpio6 {
++			gpios = <&gpio5 8 GPIO_ACTIVE_HIGH>;
++			status = "okay";
++        };
++        
++        gpio7 {
++			gpios = <&gpio5 9 GPIO_ACTIVE_HIGH>;
++			status = "okay";
++        };
++        
++        gpio8 {
++			gpios = <&gpio5 10 GPIO_ACTIVE_HIGH>;
++			status = "okay";
++        };
++        
++        spi_nor_wp {
++        	gpios = <&gpio4 5 GPIO_ACTIVE_LOW>;
++        	status = "okay";
++        	value = <1>;
++        };
++	};
++	
+ 	mxcfb1: fb@0 {
+ 		compatible = "fsl,mxc_sdc_fb";
+ 		disp_dev = "ldb";
+@@ -137,12 +186,14 @@
+ 		status = "okay";
+ 	};
+ 
++/*
+ 	sound-hdmi {
+ 		compatible = "fsl,imx6q-audio-hdmi",
+ 			     "fsl,imx-audio-hdmi";
+ 		model = "imx-audio-hdmi";
+ 		hdmi-controller = <&hdmi_audio>;
+ 	};
++*/
+ };
+ 
+ &memory {
+@@ -239,6 +290,7 @@
+ 	status = "okay";
+ };
+ 
++/*
+ &hdmi_cec {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_hdmi_cec>;
+@@ -260,6 +312,7 @@
+ &hdmi_audio {
+ 	status = "okay";
+ };
++*/
+ 
+ &ssi2 {
+ 	fsl,mode = "i2s-slave";
+@@ -267,16 +320,16 @@
+ };
+ 
+ &ecspi2 {
+-	fsl,spi-num-chipselects = <1>;
+-	cs-gpios = <&gpio5 29 0>;
++	//fsl,spi-num-chipselects = <1>;
++	cs-gpios = <&gpio5 29 GPIO_ACTIVE_LOW>;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_ecspi2>;
+ 	status = "okay";
+ 
+-	spi2_flash: w25x40@0 {
++	flash: w25q32@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "winbond,w25x40";
++		compatible = "winbond,w25x40", "jedec,spi-nor";
+ 		spi-max-frequency = <20000000>;
+ 		reg = <0>;
+ 	};
+@@ -305,12 +358,12 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
+-
++/*
+ 	hdmi: edid@50 {
+ 		compatible = "fsl,imx6-hdmi-i2c";
+ 		reg = <0x50>;
+ 	};
+-
++*/
+ 	pmic: pfuze100@08 {
+ 		compatible = "fsl,pfuze100";
+ 		reg = <0x08>;
+@@ -548,7 +601,6 @@
+ 				MX6QDL_PAD_GPIO_3__GPIO1_IO03		0x40000000 //RTC_IRQ
+ 				MX6QDL_PAD_KEY_ROW4__GPIO4_IO15         0x80000000 //USB_OTG_PWR_EN
+ 				MX6QDL_PAD_GPIO_9__GPIO1_IO09		0xC0000000 //LAN8710 ENET_IRQ#
+-				MX6QDL_PAD_GPIO_19__GPIO4_IO05		0xC0000000 /*  SPI_NOR_WP  */
+ 				MX6QDL_PAD_DISP0_DAT21__GPIO5_IO15	0xC0000000 /*  USB_PWR_EN1 */
+ 				MX6QDL_PAD_DISP0_DAT22__GPIO5_IO16	0xC0000000 /*  USB_PWR_EN2 */
+ 				MX6QDL_PAD_GPIO_6__GPIO1_IO06		0xC0000000 /*  LCD_VDD_EN  */
+@@ -556,16 +608,19 @@
+ 				MX6QDL_PAD_GPIO_17__GPIO7_IO12		0xC0000000 /*  LED_EN 	   */
+ 				MX6QDL_PAD_GPIO_0__GPIO1_IO00		0xC0000000 /*  GPIO_MCU   */
+ 				MX6QDL_PAD_DISP0_DAT19__GPIO5_IO13	0x4001b0b0 /*  CPU_GPIO_OUT    */
+-				MX6QDL_PAD_DISP0_DAT9__GPIO4_IO30	0xC0000000
+-				MX6QDL_PAD_DISP0_DAT10__GPIO4_IO31  0xC0000000
+-				MX6QDL_PAD_DISP0_DAT11__GPIO5_IO05  0xC0000000
+-				MX6QDL_PAD_DISP0_DAT12__GPIO5_IO06  0xC0000000
+-				MX6QDL_PAD_DISP0_DAT13__GPIO5_IO07  0xC0000000
+-				MX6QDL_PAD_DISP0_DAT14__GPIO5_IO08  0xC0000000
+-				MX6QDL_PAD_DISP0_DAT15__GPIO5_IO09  0xC0000000
+-				MX6QDL_PAD_DISP0_DAT16__GPIO5_IO10  0xC0000000
+ 				MX6QDL_PAD_DISP0_DAT17__GPIO5_IO11	0xC0000000 /*  Touch_INT   */
+ 				MX6QDL_PAD_DISP0_DAT18__GPIO5_IO12	0xC0000000 /*  Touch_Rest  */
++				
++				
++				// gpio default config as inputs
++				MX6QDL_PAD_DISP0_DAT9__GPIO4_IO30	0x00012000 // gpio1
++				MX6QDL_PAD_DISP0_DAT10__GPIO4_IO31  0x00012000 // gpio2
++				MX6QDL_PAD_DISP0_DAT11__GPIO5_IO05  0x00012000 // gpio3
++				MX6QDL_PAD_DISP0_DAT12__GPIO5_IO06  0x00012000 // gpio4
++				MX6QDL_PAD_DISP0_DAT13__GPIO5_IO07  0x00012000 // gpio5
++				MX6QDL_PAD_DISP0_DAT14__GPIO5_IO08  0x00012000 // gpio6
++				MX6QDL_PAD_DISP0_DAT15__GPIO5_IO09  0x00012000 // gpio7
++				MX6QDL_PAD_DISP0_DAT16__GPIO5_IO10  0x00012000 // gpio8			
+ 			>;
+  		};
+ 
+@@ -574,7 +629,8 @@
+ 				MX6QDL_PAD_CSI0_DAT10__ECSPI2_MISO	0x000100b1
+ 				MX6QDL_PAD_CSI0_DAT9__ECSPI2_MOSI	0x000100b1
+ 				MX6QDL_PAD_CSI0_DAT8__ECSPI2_SCLK	0x000100b1
+-				MX6QDL_PAD_CSI0_DAT11__GPIO5_IO29   0x80000000
++				MX6QDL_PAD_CSI0_DAT11__GPIO5_IO29	0x0001b0b1 // flash cs
++				MX6QDL_PAD_GPIO_19__GPIO4_IO05		0x0000a060 // flash wp
+ 			>;
+ 		};
+ 		
+@@ -648,10 +704,10 @@
+ 			fsl,pins = <
+ 				MX6QDL_PAD_SD2_CMD__SD2_CMD		0x17059
+ 				MX6QDL_PAD_SD2_CLK__SD2_CLK		0x10059
+-				MX6QDL_PAD_SD2_DAT0__SD2_DATA0		0x17059
+-				MX6QDL_PAD_SD2_DAT1__SD2_DATA1		0x17059
+-				MX6QDL_PAD_SD2_DAT2__SD2_DATA2		0x17059
+-				MX6QDL_PAD_SD2_DAT3__SD2_DATA3		0x17059
++				MX6QDL_PAD_SD2_DAT0__SD2_DATA0	0x17059
++				MX6QDL_PAD_SD2_DAT1__SD2_DATA1	0x17059
++				MX6QDL_PAD_SD2_DAT2__SD2_DATA2	0x17059
++				MX6QDL_PAD_SD2_DAT3__SD2_DATA3	0x17059
+ 			>;
+ 		};
+ 		
+@@ -659,14 +715,14 @@
+ 			fsl,pins = <
+ 				MX6QDL_PAD_SD4_CMD__SD4_CMD		0x17059
+ 				MX6QDL_PAD_SD4_CLK__SD4_CLK		0x10059
+-				MX6QDL_PAD_SD4_DAT0__SD4_DATA0		0x17059
+-				MX6QDL_PAD_SD4_DAT1__SD4_DATA1		0x17059
+-				MX6QDL_PAD_SD4_DAT2__SD4_DATA2		0x17059
+-				MX6QDL_PAD_SD4_DAT3__SD4_DATA3		0x17059
+-				MX6QDL_PAD_SD4_DAT4__SD4_DATA4		0x17059
+-				MX6QDL_PAD_SD4_DAT5__SD4_DATA5		0x17059
+-				MX6QDL_PAD_SD4_DAT6__SD4_DATA6		0x17059
+-				MX6QDL_PAD_SD4_DAT7__SD4_DATA7		0x17059
++				MX6QDL_PAD_SD4_DAT0__SD4_DATA0	0x17059
++				MX6QDL_PAD_SD4_DAT1__SD4_DATA1	0x17059
++				MX6QDL_PAD_SD4_DAT2__SD4_DATA2	0x17059
++				MX6QDL_PAD_SD4_DAT3__SD4_DATA3	0x17059
++				MX6QDL_PAD_SD4_DAT4__SD4_DATA4	0x17059
++				MX6QDL_PAD_SD4_DAT5__SD4_DATA5	0x17059
++				MX6QDL_PAD_SD4_DAT6__SD4_DATA6	0x17059
++				MX6QDL_PAD_SD4_DAT7__SD4_DATA7	0x17059
+ 			>;
+ 		};
+ 

@@ -1,0 +1,21 @@
+From cad2853943496c28cc92806de079f0855d96c3b6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Fri, 24 May 2019 10:47:21 +0200
+Subject: [PATCH] Define CONFIG_SPI_MEM to enable build in 2019.11
+
+---
+ include/configs/vdt6010.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/configs/vdt6010.h b/include/configs/vdt6010.h
+index 0a9d6326e9..ecb40dcb17 100644
+--- a/include/configs/vdt6010.h
++++ b/include/configs/vdt6010.h
+@@ -34,6 +34,7 @@
+ #define CONFIG_SF_DEFAULT_CS		0
+ #define CONFIG_SF_DEFAULT_SPEED		20000000
+ #define CONFIG_SF_DEFAULT_MODE		SPI_MODE_0
++#define CONFIG_SPI_MEM /* Required for SPL build as of 2019.11 */
+ 
+ /* Flash and environment organization */
+ /*#define CONFIG_SYS_NO_FLASH*/

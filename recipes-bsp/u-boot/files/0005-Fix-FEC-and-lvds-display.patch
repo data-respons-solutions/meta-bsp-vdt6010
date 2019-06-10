@@ -1,0 +1,278 @@
+From d3fdd46c29ad0c9350b74c7dd712a5a69dfd577a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Wed, 15 May 2019 12:19:28 +0200
+Subject: [PATCH] Fix FEC and lvds display
+
+---
+ board/datarespons/vdt6010/vdt6010.c      | 81 ++++++++++++++++++--------------
+ board/datarespons/vdt6010/vdt6010_pins.h |  3 --
+ configs/vdt6010_defconfig                |  2 +
+ configs/vdt6010_factory_defconfig        |  2 +
+ include/configs/vdt6010.h                | 12 ++---
+ 5 files changed, 55 insertions(+), 45 deletions(-)
+
+diff --git a/board/datarespons/vdt6010/vdt6010.c b/board/datarespons/vdt6010/vdt6010.c
+index fabd045776..9906c10e3a 100644
+--- a/board/datarespons/vdt6010/vdt6010.c
++++ b/board/datarespons/vdt6010/vdt6010.c
+@@ -51,6 +51,20 @@ DECLARE_GLOBAL_DATA_PTR;
+  *
+  */
+ 
++static void setup_backlight()
++{
++	SETUP_IOMUX_PADS(pwm_pads);
++
++	gpio_set_value(LED_VCC_EN, 1);
++	gpio_set_value(LED_EN, 1);
++
++	if (pwm_config(0, 100000, 100000)) {
++		printf("%s: pwm_config failed\n", __func__);
++	}
++
++	pwm_enable(0);
++}
++
+ static void disable_lvds(struct display_info_t const *dev)
+ {
+ 	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
+@@ -71,12 +85,8 @@ static void do_enable_hdmi(struct display_info_t const *dev)
+ 
+ static void enable_lvds(struct display_info_t const *dev)
+ {
+-	struct iomuxc *iomux = (struct iomuxc *)
+-				IOMUXC_BASE_ADDR;
+-	u32 reg = readl(&iomux->gpr[2]);
+-	reg |= IOMUXC_GPR2_DATA_WIDTH_CH0_24BIT |
+-	       IOMUXC_GPR2_DATA_WIDTH_CH1_24BIT;
+-	writel(reg, &iomux->gpr[2]);
++	gpio_set_value(LCD_VDD_EN, 1);
++	setup_backlight();
+ }
+ 
+ 
+@@ -87,7 +97,7 @@ struct display_info_t const displays[] = {{
+ 	.detect	= NULL,
+ 	.enable	= enable_lvds,
+ 	.mode	= {
+-			.name           = "MXXF1-XGA",
++			.name           = "AM-1280800NTZQW-T10H",
+ 			.refresh        = 60,
+ 			.xres           = 1280,
+ 			.yres           = 800,
+@@ -123,12 +133,15 @@ struct display_info_t const displays[] = {{
+ } },  };
+ size_t display_count = ARRAY_SIZE(displays);
+ 
+-static void setup_display_clock(void)
++static void setup_display(void)
+ {
+ 	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
+ 	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
+ 	int reg;
+ 
++	/* Setup HSYNC, VSYNC, DISP_CLK for debugging purposes */
++	//SETUP_IOMUX_PADS(di0_pads);
++
+ 	enable_ipu_clock();
+ 	imx_setup_hdmi();
+ 
+@@ -163,30 +176,21 @@ static void setup_display_clock(void)
+ 	     | IOMUXC_GPR2_DATA_WIDTH_CH1_24BIT
+ 	     | IOMUXC_GPR2_BIT_MAPPING_CH0_SPWG
+ 	     | IOMUXC_GPR2_DATA_WIDTH_CH0_24BIT
+-	     | IOMUXC_GPR2_LVDS_CH1_MODE_DISABLED
+-	     | IOMUXC_GPR2_LVDS_CH0_MODE_ENABLED_DI0;
++	     | IOMUXC_GPR2_LVDS_CH0_MODE_DISABLED
++	     | IOMUXC_GPR2_LVDS_CH1_MODE_ENABLED_DI0;
+ 	writel(reg, &iomux->gpr[2]);
+ 
+ 	reg = readl(&iomux->gpr[3]);
+-	reg = (reg & ~(IOMUXC_GPR3_LVDS0_MUX_CTL_MASK
++	reg = (reg & ~(IOMUXC_GPR3_LVDS1_MUX_CTL_MASK
+ 			| IOMUXC_GPR3_HDMI_MUX_CTL_MASK))
+ 	    | (IOMUXC_GPR3_MUX_SRC_IPU1_DI0
+-	       << IOMUXC_GPR3_LVDS0_MUX_CTL_OFFSET);
++	       << IOMUXC_GPR3_LVDS1_MUX_CTL_OFFSET);
+ 	writel(reg, &iomux->gpr[3]);
+ }
+ 
+-static void setup_backlight(void)
++int overwrite_console(void)
+ {
+-	SETUP_IOMUX_PADS(pwm_pads);
+-
+-	gpio_set_value(LED_VCC_EN, 1);
+-	gpio_set_value(LED_EN, 1);
+-
+-	if (pwm_config(0, 100000, 100000)) {
+-		printf("%s: pwm_config failed\n");
+-	}
+-
+-	pwm_enable(0);
++	return 1;
+ }
+ 
+ int board_early_init_f(void)
+@@ -203,9 +207,7 @@ int board_early_init_f(void)
+ 	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &mx6dq_i2c_pad_info1);
+ 	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &mx6dq_i2c_pad_info2);
+ 
+-	setup_display_clock();
+-	gpio_set_value(LCD_VDD_EN, 0);
+-	setup_backlight();
++	setup_display();
+ 
+ 	return 0;
+ }
+@@ -423,7 +425,7 @@ static void setup_usb(void)
+ 
+ 	// Set daisy chain - USB_OTG_ID to GPIO_1
+ 	if (is_mx6dq()) {
+-		imx_iomux_set_gpr_register(1, IOMUXC_GPR1_ENET_CLK_SEL_MASK, 1, 0);
++		imx_iomux_set_gpr_register(1, IOMUXC_GPR1_USB_OTG_ID_OFFSET, 1, 1);
+ 	}
+ 
+ 	// Reset USB hub and devices
+@@ -518,21 +520,30 @@ int board_phy_config(struct phy_device *phydev)
+ 
+ static void setup_iomux_enet(void)
+ {
++	int ret = 0;
++
+ 	SETUP_IOMUX_PADS(enet_pads);
+ 
+-	// Set LAN8710 PHY reset
++	/* Set LAN8710 PHY reset */
+ 	gpio_direction_output(LAN8710_RST , 0);
+ 
+-	// Set GPR1[21] to enable ENET_REF_CLK output.
+-	imx_iomux_set_gpr_register(1, IOMUXC_GPR1_ENET_CLK_SEL_MASK, 1, 1);
++	/*
++	 * Set GPR1[21] to configure ENET_REF_CLK as output.
++	 * ENET_REF_CLOCK from anatop->enet_pll
++	 * Expects GPR1[13] already cleared (setup_usb) to select ENET_RX_ER
++	 */
++	imx_iomux_set_gpr_register(1, IOMUXC_GPR1_ENET_CLK_SEL_OFFSET, 1, 1);
+ 
+-	// Route anatop 50MHz to ENET_REF_CLK
+-	enable_fec_anatop_clock(0, ENET_50MHZ);
++	/* Set anatop->enet_pll as 50MHz */
++	ret = enable_fec_anatop_clock(0, ENET_50MHZ);
++	if (ret) {
++		printf("%s: enable_fec_anatop_clock: %d\n", __func__, ret);
++	}
+ 
+-	udelay(500);
++	mdelay(1);
+ 
+-	// Release LAN8710 PHY reset
+-	gpio_direction_output(LAN8710_RST , 1);
++	/* Release LAN8710 PHY reset */
++	gpio_set_value(LAN8710_RST , 1);
+ }
+ 
+ int board_eth_init(bd_t *bis)
+diff --git a/board/datarespons/vdt6010/vdt6010_pins.h b/board/datarespons/vdt6010/vdt6010_pins.h
+index cc7fb4f81a..970276e288 100644
+--- a/board/datarespons/vdt6010/vdt6010_pins.h
++++ b/board/datarespons/vdt6010/vdt6010_pins.h
+@@ -41,7 +41,6 @@ static iomux_v3_cfg_t const gpio_pads[] = {
+ static iomux_v3_cfg_t const enet_pads[] = {
+ 	IOMUX_PADS(PAD_ENET_MDC__ENET_MDC	| MUX_PAD_CTRL(ENET_PAD_CTRL)),
+ 	IOMUX_PADS(PAD_ENET_MDIO__ENET_MDIO	| MUX_PAD_CTRL(ENET_PAD_CTRL)),
+-	/* schematic says CRS_DV but no such define in mx6q_pins.h? */
+ 	IOMUX_PADS(PAD_ENET_CRS_DV__ENET_RX_EN	| MUX_PAD_CTRL(ENET_PAD_CTRL)),
+ 	IOMUX_PADS(PAD_ENET_RX_ER__ENET_RX_ER | MUX_PAD_CTRL(ENET_PAD_CTRL)),
+ 	IOMUX_PADS(PAD_ENET_TX_EN__ENET_TX_EN | MUX_PAD_CTRL(ENET_PAD_CTRL)),
+@@ -109,8 +108,6 @@ static iomux_v3_cfg_t const other_pads[] = {
+ 	IOMUX_PADS(PAD_GPIO_3__GPIO1_IO03 | MUX_PAD_CTRL(NO_PAD_CTRL)), // RTC_IRQ
+ 	IOMUX_PADS(PAD_GPIO_18__GPIO7_IO13 | MUX_PAD_CTRL(NO_PAD_CTRL)), // PMIC_INT
+ 	IOMUX_PADS(PAD_GPIO_6__GPIO1_IO06 | MUX_PAD_CTRL(NO_PAD_CTRL)), // LCD_VDD_EN
+-	IOMUX_PADS(PAD_GPIO_7__GPIO1_IO07 | MUX_PAD_CTRL(NO_PAD_CTRL)), // CABC_EN
+-	IOMUX_PADS(PAD_GPIO_8__GPIO1_IO08 | MUX_PAD_CTRL(NO_PAD_CTRL)), // BIST
+ 	IOMUX_PADS(PAD_GPIO_17__GPIO7_IO12 | MUX_PAD_CTRL(NO_PAD_CTRL)), // LED_EN
+ 	IOMUX_PADS(PAD_KEY_COL1__GPIO4_IO08 | MUX_PAD_CTRL(NO_PAD_CTRL)), // PCIE_RST_B
+ };
+diff --git a/configs/vdt6010_defconfig b/configs/vdt6010_defconfig
+index b9eea759cb..12b21a3786 100644
+--- a/configs/vdt6010_defconfig
++++ b/configs/vdt6010_defconfig
+@@ -21,6 +21,7 @@ CONFIG_CMD_EXT4=y
+ CONFIG_CMD_EXT4_WRITE=y
+ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
++CONFIG_CMD_BMP=y
+ CONFIG_USB=y
+ CONFIG_USB_STORAGE=y
+ CONFIG_USB_GADGET=y
+@@ -62,3 +63,4 @@ CONFIG_SPL_SPI_SUPPORT=y
+ CONFIG_SPL_SPI_LOAD=y
+ CONFIG_FACTORY_BOOT=n
+ CONFIG_VIDEO=y
++CONFIG_CMD_HDMIDETECT=y
+\ No newline at end of file
+diff --git a/configs/vdt6010_factory_defconfig b/configs/vdt6010_factory_defconfig
+index ea83bba8c4..229ef2e630 100644
+--- a/configs/vdt6010_factory_defconfig
++++ b/configs/vdt6010_factory_defconfig
+@@ -21,6 +21,7 @@ CONFIG_CMD_EXT4=y
+ CONFIG_CMD_EXT4_WRITE=y
+ CONFIG_CMD_FAT=y
+ CONFIG_CMD_FS_GENERIC=y
++CONFIG_CMD_BMP=y
+ CONFIG_USB=y
+ CONFIG_USB_STORAGE=y
+ CONFIG_USB_GADGET=y
+@@ -62,3 +63,4 @@ CONFIG_SPL_SPI_SUPPORT=n
+ CONFIG_SPL_SPI_LOAD=n
+ CONFIG_FACTORY_BOOT=y
+ CONFIG_VIDEO=y
++CONFIG_CMD_HDMIDETECT=y
+\ No newline at end of file
+diff --git a/include/configs/vdt6010.h b/include/configs/vdt6010.h
+index b0ed7ccb72..061e508ad5 100644
+--- a/include/configs/vdt6010.h
++++ b/include/configs/vdt6010.h
+@@ -9,11 +9,9 @@
+ #ifndef __VDT6010_CONFIG_H
+ #define __VDT6010_CONFIG_H
+ 
+-/*
+-#ifdef CONFIG_SPL_BUILD
++#ifndef CONFIG_SPL_BUILD
+ #define DEBUG
+ #endif
+-*/
+ 
+ #define CONFIG_SYS_FSL_SEC_COMPAT 4
+ 
+@@ -98,7 +96,7 @@
+ #define CONFIG_FEC_XCV_TYPE		RMII
+ #define CONFIG_ETHPRIME			"FEC"
+ #define CONFIG_FEC_MXC_PHYADDR		0
+-
++/*#define CONFIG_CMD_NET*/
+ #define CONFIG_PHYLIB
+ #define CONFIG_PHY_SMSC
+ 
+@@ -317,16 +315,16 @@
+ #define CONFIG_SYS_I2C_MXC
+ #define CONFIG_SYS_I2C_SPEED		  100000
+ 
+-/* IPU */
++/* Framebuffer */
+ #define CONFIG_VIDEO_IPUV3
+ #define CONFIG_VIDEO_BMP_RLE8
+ #define CONFIG_SPLASH_SCREEN
+ #define CONFIG_SPLASH_SCREEN_ALIGN
+-#define CONFIG_BMP_16BPP
++#define CONFIG_BMP_24BPP
+ #define CONFIG_VIDEO_LOGO
+ #define CONFIG_VIDEO_BMP_LOGO
+ #define CONFIG_IMX_HDMI
+-/*#define CONFIG_IMX_VIDEO_SKIP*/
++#define CONFIG_IMX_VIDEO_SKIP
+ 
+ /* PMIC */
+ /*

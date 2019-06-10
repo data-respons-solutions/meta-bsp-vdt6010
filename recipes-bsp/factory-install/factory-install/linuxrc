@@ -1,0 +1,46 @@
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+mount -t sysfs none /sys
+mount -t proc none /proc
+mount -t devtmpfs none /dev
+
+# disable turn off display
+#echo -e "\033[9;0]" > /dev/tty0
+
+die() {
+    echo -n "ERROR: "
+    echo "$*"
+    /bin/bash
+}
+
+echo "Starting Factory Install"
+#/usr/sbin/emmc_init.py
+#echo "EMMC ready - proceed with boot loader"
+
+echo "Flash factory partition"
+#/usr/bin/dr-flash-uboot.py --spl /boot/SPL_signed /boot/u-boot-ivt.img_signed --partition 1 || die "Error flashing factory partition"
+#/usr/bin/dr-flash-uboot.py --spl /boot/SPL /boot/u-boot-ivt.img --partition 1 || die "Error flashing factory partition"
+
+echo "Flash user partition"
+#/usr/bin/dr-flash-uboot.py --spl /boot/SPL_signed /boot/u-boot-ivt.img_signed --partition 0 || die "Error flashing user partition"
+#/usr/bin/dr-flash-uboot.py --spl /boot/SPL /boot/u-boot-ivt.img --partition 0 || die "Error flashing user partition"
+
+echo "Fusing boot config and disable JTAG"
+#echo 0x18005060 > /sys/fsl_otp/HW_OCOTP_CFG4
+#echo 0x00100010 > /sys/fsl_otp/HW_OCOTP_CFG5
+
+echo "Fusing of SRK (HAB) SKIPPED" 
+#echo "Fusing SRK"
+#/usr/sbin/hab.py --commit || die "Error fusing SRK"
+
+echo "Power OFF"
+#poweroff -f
+
+echo "Enable debugfs"
+mount -t debugfs none /sys/kernel/debug
+
+echo "Flashing uboot"
+flash-uboot --spl /boot/SPL-production --uboot /boot/u-boot-ivt.img --gpio gpio101
+
+/bin/sh

@@ -1,0 +1,27 @@
+From 08799dfba79bd71233ed5797935c44b4e71493c7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Mon, 13 May 2019 11:43:02 +0200
+Subject: [PATCH] DT compatiblity to datarespons,imx
+
+---
+ arch/arm/mach-imx/mach-imx6-dr.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-imx/mach-imx6-dr.c b/arch/arm/mach-imx/mach-imx6-dr.c
+index 98c81d301518..528f12e15b3a 100644
+--- a/arch/arm/mach-imx/mach-imx6-dr.c
++++ b/arch/arm/mach-imx/mach-imx6-dr.c
+@@ -665,11 +665,11 @@ static void __init imx6q_init_irq(void)
+ }
+ 
+ static const char *imx6q_dt_compat[] __initdata = {
+-	"datarespons",
++	"datarespons,imx",
+ 	NULL,
+ };
+ 
+-DT_MACHINE_START(IMX6Q, "Data Respons i.MX6 DualLite (Device Tree)")
++DT_MACHINE_START(IMX6Q, "Data Respons i.MX6Q/DL (Device Tree)")
+ 	/*
+ 	 * i.MX6Q/DL maps system memory at 0x10000000 (offset 256MiB), and
+ 	 * GPU has a limit on physical address that it accesses, which must

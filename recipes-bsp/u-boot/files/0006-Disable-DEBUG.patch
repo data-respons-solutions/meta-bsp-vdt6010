@@ -1,0 +1,27 @@
+From dd8a213508295aae88b19072398927d4fedd48f7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Wed, 15 May 2019 13:19:36 +0200
+Subject: [PATCH] Disable DEBUG
+
+---
+ include/configs/vdt6010.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/configs/vdt6010.h b/include/configs/vdt6010.h
+index 061e508ad5..0a9d6326e9 100644
+--- a/include/configs/vdt6010.h
++++ b/include/configs/vdt6010.h
+@@ -8,11 +8,11 @@
+ 
+ #ifndef __VDT6010_CONFIG_H
+ #define __VDT6010_CONFIG_H
+-
++/*
+ #ifndef CONFIG_SPL_BUILD
+ #define DEBUG
+ #endif
+-
++*/
+ #define CONFIG_SYS_FSL_SEC_COMPAT 4
+ 
+ #ifdef CONFIG_SPL

@@ -1,0 +1,31 @@
+From d57a5044dbd9b1f257bfbf78085485e898ad1120 Mon Sep 17 00:00:00 2001
+From: Hans Christian Lonstad <hcl@datarespons.no>
+Date: Thu, 23 Aug 2018 12:56:29 +0200
+Subject: [PATCH 02/11] imx6: Do not mask interrupts in WAIT_CLOCKED lpm mode.
+
+Permanently freezes in low power mode if masked
+---
+ arch/arm/mach-imx/pm-imx6.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-imx/pm-imx6.c b/arch/arm/mach-imx/pm-imx6.c
+index ecdf071653d4..a11298ae4784 100644
+--- a/arch/arm/mach-imx/pm-imx6.c
++++ b/arch/arm/mach-imx/pm-imx6.c
+@@ -337,9 +337,11 @@ int imx6_set_lpm(enum mxc_cpu_pwr_mode mode)
+ 	 *
+ 	 * Note that IRQ #32 is GIC SPI #0.
+ 	 */
+-	imx_gpc_hwirq_unmask(0);
++	if (mode != WAIT_CLOCKED)
++		imx_gpc_hwirq_unmask(0);
+ 	writel_relaxed(val, ccm_base + CLPCR);
+-	imx_gpc_hwirq_mask(0);
++	if (mode != WAIT_CLOCKED)
++		imx_gpc_hwirq_mask(0);
+ 
+ 	return 0;
+ }
+-- 
+2.17.1
+

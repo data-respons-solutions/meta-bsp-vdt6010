@@ -1,0 +1,281 @@
+From 59a9e80aa73759d381aea24a4e1a6ee13d35c550 Mon Sep 17 00:00:00 2001
+From: Hans Christian Lonstad <hcl@datarespons.no>
+Date: Tue, 28 Aug 2018 15:16:17 +0200
+Subject: [PATCH 10/11] Simple motion detect when shutdown
+
+The motion detect feature may be activated upon shutdown using the IIO
+attribute wake_on_shake
+
+Default step counter value for detection used
+---
+ drivers/iio/imu/st_lsm6dsx/st_lsm6dsx.h       |  5 ++
+ .../iio/imu/st_lsm6dsx/st_lsm6dsx_buffer.c    | 16 +++-
+ drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_core.c  | 85 ++++++++++++++++++-
+ drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_spi.c   |  7 ++
+ 4 files changed, 108 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx.h b/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx.h
+index 46352c7bff43..a06663c82bec 100644
+--- a/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx.h
++++ b/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx.h
+@@ -19,6 +19,9 @@
+ #define ST_LSM6DSL_DEV_NAME	"lsm6dsl"
+ #define ST_LSM6DSM_DEV_NAME	"lsm6dsm"
+ 
++#define ST_LSM6DSX_FUNC_SRC1_ADDR		0x53
++#define ST_LSM6DSX_FUNC_SRC1_SIGNM_MASK		BIT(6)
++
+ enum st_lsm6dsx_hw_id {
+ 	ST_LSM6DS3_ID,
+ 	ST_LSM6DS3H_ID,
+@@ -95,6 +98,7 @@ struct st_lsm6dsx_sensor {
+ 	u8 sip;
+ 	u8 decimator;
+ 	u8 decimator_mask;
++	u8 enable_wake;
+ 
+ 	s64 delta_ts;
+ 	s64 ts;
+@@ -149,5 +153,6 @@ int st_lsm6dsx_update_watermark(struct st_lsm6dsx_sensor *sensor,
+ int st_lsm6dsx_flush_fifo(struct st_lsm6dsx_hw *hw);
+ int st_lsm6dsx_set_fifo_mode(struct st_lsm6dsx_hw *hw,
+ 			     enum st_lsm6dsx_fifo_mode fifo_mode);
++void st_lsm6dsx_shutdown(struct device *dev);
+ 
+ #endif /* ST_LSM6DSX_H */
+diff --git a/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_buffer.c b/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_buffer.c
+index e2737dc71b67..8720900e3b11 100644
+--- a/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_buffer.c
++++ b/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_buffer.c
+@@ -53,6 +53,11 @@
+ 
+ #define ST_LSM6DSX_MAX_FIFO_ODR_VAL		0x08
+ 
++
++
++
++
++
+ struct st_lsm6dsx_decimator_entry {
+ 	u8 decimator;
+ 	u8 val;
+@@ -395,8 +400,17 @@ static irqreturn_t st_lsm6dsx_handler_irq(int irq, void *private)
+ static irqreturn_t st_lsm6dsx_handler_thread(int irq, void *private)
+ {
+ 	struct st_lsm6dsx_hw *hw = private;
+-	int count;
++	int count, err;
++	u8 func_src1;
+ 
++	err = hw->tf->read(hw->dev, ST_LSM6DSX_FUNC_SRC1_ADDR, 1, &func_src1);
++	if (err < 0) {
++		dev_err(hw->dev, "%s: failed reading reg %d\n", __func__, ST_LSM6DSX_FUNC_SRC1_ADDR);
++		return IRQ_NONE;
++	}
++	if (func_src1 & ST_LSM6DSX_FUNC_SRC1_SIGNM_MASK) {
++		dev_info(hw->dev, "Significant movement\n");
++	}
+ 	mutex_lock(&hw->fifo_lock);
+ 	count = st_lsm6dsx_read_fifo(hw);
+ 	mutex_unlock(&hw->fifo_lock);
+diff --git a/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_core.c b/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_core.c
+index cce0c93accef..8f929f57d86d 100644
+--- a/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_core.c
++++ b/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_core.c
+@@ -85,6 +85,10 @@
+ #define ST_LSM6DSX_GYRO_FS_1000_GAIN		IIO_DEGREE_TO_RAD(35000)
+ #define ST_LSM6DSX_GYRO_FS_2000_GAIN		IIO_DEGREE_TO_RAD(70000)
+ 
++#define ST_LSM6DSX_CTRL10_C_ADDR		0x19
++#define ST_LSM6DSX_CTRL10_C_FUNC_EN_MASK	BIT(2)
++#define ST_LSM6DSX_CTRL10_C_SIGN_MOTION_EN_MASK	BIT(0)
++
+ struct st_lsm6dsx_odr {
+ 	u16 hz;
+ 	u8 val;
+@@ -402,7 +406,7 @@ static int st_lsm6dsx_read_raw(struct iio_dev *iio_dev,
+ 			       int *val, int *val2, long mask)
+ {
+ 	struct st_lsm6dsx_sensor *sensor = iio_priv(iio_dev);
+-	int ret;
++	int ret = -EINVAL;
+ 
+ 	switch (mask) {
+ 	case IIO_CHAN_INFO_RAW:
+@@ -422,8 +426,8 @@ static int st_lsm6dsx_read_raw(struct iio_dev *iio_dev,
+ 		*val2 = sensor->gain;
+ 		ret = IIO_VAL_INT_PLUS_MICRO;
+ 		break;
++
+ 	default:
+-		ret = -EINVAL;
+ 		break;
+ 	}
+ 
+@@ -513,15 +517,40 @@ static ssize_t st_lsm6dsx_sysfs_scale_avail(struct device *dev,
+ 	return len;
+ }
+ 
++static ssize_t st_lsm6dsx_sysfs_wos_get(struct device *dev,
++				       struct device_attribute *attr,
++				       char *buf)
++{
++	struct st_lsm6dsx_sensor *sensor = iio_priv(dev_get_drvdata(dev));
++	return sprintf(buf, "%d\n", sensor->enable_wake ? 1 : 0);
++}
++
++static ssize_t st_lsm6dsx_sysfs_wos_set(struct device *dev,
++				       struct device_attribute *attr,
++				       const char *buf, size_t len)
++{
++	struct st_lsm6dsx_sensor *sensor = iio_priv(dev_get_drvdata(dev));
++	unsigned int val;
++	int ret = kstrtouint(buf, 10, &val);
++	if (ret < 0)
++		return ret;
++	sensor->enable_wake = val > 0 ? 1 : 0;
++	return len;
++}
++
+ static IIO_DEV_ATTR_SAMP_FREQ_AVAIL(st_lsm6dsx_sysfs_sampling_frequency_avail);
+ static IIO_DEVICE_ATTR(in_accel_scale_available, 0444,
+ 		       st_lsm6dsx_sysfs_scale_avail, NULL, 0);
++
++static IIO_DEVICE_ATTR(wake_on_shake, 0644, st_lsm6dsx_sysfs_wos_get, st_lsm6dsx_sysfs_wos_set, 0);
++
+ static IIO_DEVICE_ATTR(in_anglvel_scale_available, 0444,
+ 		       st_lsm6dsx_sysfs_scale_avail, NULL, 0);
+ 
+ static struct attribute *st_lsm6dsx_acc_attributes[] = {
+ 	&iio_dev_attr_sampling_frequency_available.dev_attr.attr,
+ 	&iio_dev_attr_in_accel_scale_available.dev_attr.attr,
++	&iio_dev_attr_wake_on_shake.dev_attr.attr,
+ 	NULL,
+ };
+ 
+@@ -599,6 +628,7 @@ static int st_lsm6dsx_init_device(struct st_lsm6dsx_hw *hw)
+ {
+ 	u8 data, drdy_int_reg;
+ 	int err;
++	u8 func_src1;
+ 
+ 	data = ST_LSM6DSX_REG_RESET_MASK;
+ 	err = hw->tf->write(hw->dev, ST_LSM6DSX_REG_RESET_ADDR, sizeof(data),
+@@ -608,6 +638,11 @@ static int st_lsm6dsx_init_device(struct st_lsm6dsx_hw *hw)
+ 
+ 	msleep(200);
+ 
++	/* Clear eventual pending wakeup */
++	err = hw->tf->read(hw->dev, ST_LSM6DSX_FUNC_SRC1_ADDR, 1, &func_src1);
++	if (func_src1 & ST_LSM6DSX_FUNC_SRC1_SIGNM_MASK)
++		dev_info(hw->dev, "Significant movement pending\n");
++
+ 	/* latch interrupts */
+ 	err = st_lsm6dsx_write_with_mask(hw, ST_LSM6DSX_REG_LIR_ADDR,
+ 					 ST_LSM6DSX_REG_LIR_MASK, 1);
+@@ -625,13 +660,13 @@ static int st_lsm6dsx_init_device(struct st_lsm6dsx_hw *hw)
+ 	if (err < 0)
+ 		return err;
+ 
+-	/* enable FIFO watermak interrupt */
++	/* enable FIFO watermark interrupt */
+ 	err = st_lsm6dsx_get_drdy_reg(hw, &drdy_int_reg);
+ 	if (err < 0)
+ 		return err;
+ 
+ 	return st_lsm6dsx_write_with_mask(hw, drdy_int_reg,
+-					  ST_LSM6DSX_REG_FIFO_FTH_IRQ_MASK, 1);
++			ST_LSM6DSX_REG_FIFO_FTH_IRQ_MASK | BIT(6), 1);
+ }
+ 
+ static struct iio_dev *st_lsm6dsx_alloc_iiodev(struct st_lsm6dsx_hw *hw,
+@@ -683,6 +718,20 @@ static struct iio_dev *st_lsm6dsx_alloc_iiodev(struct st_lsm6dsx_hw *hw,
+ 	return iio_dev;
+ }
+ 
++static int st_lsm6dsx_enable_sigmo(struct st_lsm6dsx_hw *hw, int enable)
++{
++	int err;
++	if (enable)
++		err = st_lsm6dsx_write_with_mask(hw, ST_LSM6DSX_CTRL10_C_ADDR,
++			ST_LSM6DSX_CTRL10_C_FUNC_EN_MASK | ST_LSM6DSX_CTRL10_C_SIGN_MOTION_EN_MASK,
++			ST_LSM6DSX_CTRL10_C_FUNC_EN_MASK | ST_LSM6DSX_CTRL10_C_SIGN_MOTION_EN_MASK);
++	else
++		err = st_lsm6dsx_write_with_mask(hw, ST_LSM6DSX_CTRL10_C_ADDR,
++					ST_LSM6DSX_CTRL10_C_FUNC_EN_MASK | ST_LSM6DSX_CTRL10_C_SIGN_MOTION_EN_MASK,
++					0);
++	return err;
++}
++
+ int st_lsm6dsx_probe(struct device *dev, int irq, int hw_id, const char *name,
+ 		     const struct st_lsm6dsx_transfer_function *tf_ops)
+ {
+@@ -783,7 +832,35 @@ const struct dev_pm_ops st_lsm6dsx_pm_ops = {
+ };
+ EXPORT_SYMBOL(st_lsm6dsx_pm_ops);
+ 
++void st_lsm6dsx_shutdown(struct device *dev)
++{
++	u8 drdy_int_reg;
++	struct st_lsm6dsx_hw *hw = dev_get_drvdata(dev);
++	struct st_lsm6dsx_sensor *sensor = iio_priv(hw->iio_devs[ST_LSM6DSX_ID_ACC]);
++	if ( sensor->enable_wake) {
++		/* Enable the significant motion interrupt */
++		dev_warn(dev, "Enabling SMO interrupt in power down mode\n");
++		st_lsm6dsx_get_drdy_reg(hw, &drdy_int_reg);
++		st_lsm6dsx_write_with_mask(hw, drdy_int_reg, BIT(6), 1);
++		st_lsm6dsx_enable_sigmo(hw, 1);
++
++		/* Keep accelerometer running at 26 Hz */
++		st_lsm6dsx_set_odr(iio_priv(hw->iio_devs[ST_LSM6DSX_ID_ACC]),
++				st_lsm6dsx_odr_table[ST_LSM6DSX_ID_ACC].odr_avl[1].hz);
++	}
++	else
++		st_lsm6dsx_write_with_mask(hw,
++				st_lsm6dsx_odr_table[ST_LSM6DSX_ID_ACC].reg.addr,
++				st_lsm6dsx_odr_table[ST_LSM6DSX_ID_ACC].reg.mask, 0);
++
++	st_lsm6dsx_write_with_mask(hw,
++			st_lsm6dsx_odr_table[ST_LSM6DSX_ID_GYRO].reg.addr,
++			st_lsm6dsx_odr_table[ST_LSM6DSX_ID_GYRO].reg.mask, 0);
++}
++EXPORT_SYMBOL(st_lsm6dsx_shutdown);
++
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo.bianconi@st.com>");
+ MODULE_AUTHOR("Denis Ciocca <denis.ciocca@st.com>");
++MODULE_AUTHOR("Hans Christian Lonstad <hcl@datarespons.no>");
+ MODULE_DESCRIPTION("STMicroelectronics st_lsm6dsx driver");
+ MODULE_LICENSE("GPL v2");
+diff --git a/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_spi.c b/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_spi.c
+index 95472f153ad2..5bda25115a85 100644
+--- a/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_spi.c
++++ b/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_spi.c
+@@ -82,6 +82,11 @@ static int st_lsm6dsx_spi_probe(struct spi_device *spi)
+ 				&st_lsm6dsx_transfer_fn);
+ }
+ 
++static void st_lsm6dsx_spi_shutdown(struct spi_device *spi)
++{
++	st_lsm6dsx_shutdown(&spi->dev);
++}
++
+ static const struct of_device_id st_lsm6dsx_spi_of_match[] = {
+ 	{
+ 		.compatible = "st,lsm6ds3",
+@@ -119,11 +124,13 @@ static struct spi_driver st_lsm6dsx_driver = {
+ 		.of_match_table = of_match_ptr(st_lsm6dsx_spi_of_match),
+ 	},
+ 	.probe = st_lsm6dsx_spi_probe,
++	.shutdown = st_lsm6dsx_spi_shutdown,
+ 	.id_table = st_lsm6dsx_spi_id_table,
+ };
+ module_spi_driver(st_lsm6dsx_driver);
+ 
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo.bianconi@st.com>");
+ MODULE_AUTHOR("Denis Ciocca <denis.ciocca@st.com>");
++MODULE_AUTHOR("Hans Christian Lonstad <hcl@datarespons.no>");
+ MODULE_DESCRIPTION("STMicroelectronics st_lsm6dsx spi driver");
+ MODULE_LICENSE("GPL v2");
+-- 
+2.17.1
+

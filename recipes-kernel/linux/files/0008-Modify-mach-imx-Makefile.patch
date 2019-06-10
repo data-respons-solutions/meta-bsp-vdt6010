@@ -1,0 +1,28 @@
+From 2bd131628f748c14df59444e4a3ea006c2fc1776 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Tue, 14 May 2019 10:27:54 +0200
+Subject: [PATCH] Modify mach-imx/Makefile
+
+---
+ arch/arm/mach-imx/Makefile | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-imx/Makefile b/arch/arm/mach-imx/Makefile
+index 604a2d79000f..72a7615a8659 100644
+--- a/arch/arm/mach-imx/Makefile
++++ b/arch/arm/mach-imx/Makefile
+@@ -1,5 +1,3 @@
+-obj-$(CONFIG_SOC_IMX6Q) += mach-imx6-dr.o
+-
+ obj-y := cpu.o system.o irq-common.o common.o
+ 
+ obj-$(CONFIG_SOC_IMX21) += mm-imx21.o
+@@ -95,7 +93,7 @@ AFLAGS_ddr3_freq_imx6.o :=-Wa,-march=armv7-a
+ AFLAGS_smp_wfe_imx6.o :=-Wa,-march=armv7-a
+ AFLAGS_lpddr2_freq_imx6q.o :=-Wa,-march=armv7-a
+ obj-$(CONFIG_SOC_IMX6Q) += mach-imx6q.o ddr3_freq_imx6.o smp_wfe_imx6.o \
+-			   lpddr2_freq_imx6q.o
++			   lpddr2_freq_imx6q.o mach-imx6-dr.o
+ AFLAGS_lpddr2_freq_imx6.o :=-Wa,-march=armv7-a
+ obj-$(CONFIG_SOC_IMX6SL) += mach-imx6sl.o lpddr2_freq_imx6.o
+ AFLAGS_lpddr2_freq_imx6sll.o :=-Wa,-march=armv7-a
