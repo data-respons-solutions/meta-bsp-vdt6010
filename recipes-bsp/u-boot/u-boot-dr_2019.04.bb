@@ -16,7 +16,7 @@ SRC_URI = "git://github.com/Freescale/u-boot-fslc.git;branch=${SRCBRANCH} \
            file://0012-Adjust-DDR-IOMUXC_SW_PAD_CTL.patch \
            "
 
-LOCALVERSION = "+dr-1.0"
+LOCALVERSION = "+dr-1.1"
 
 EXTRA_OEMAKE += 'V=0'
 
