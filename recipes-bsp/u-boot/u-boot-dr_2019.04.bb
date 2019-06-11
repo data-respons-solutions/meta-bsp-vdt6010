@@ -13,6 +13,7 @@ SRC_URI = "git://github.com/Freescale/u-boot-fslc.git;branch=${SRCBRANCH} \
            file://0009-Define-CONFIG_SPI_MEM-to-enable-build-in-2019.11.patch \
            file://0010-Remove-double-enabled-kernel-append-console.patch \
            file://0011-Adjust-SPI-Flash-layout-fix-gadget-VID-PID-fix-CONFI.patch \
+           file://0012-Adjust-DDR-IOMUXC_SW_PAD_CTL.patch \
            "
 
 LOCALVERSION = "+dr-1.0"
