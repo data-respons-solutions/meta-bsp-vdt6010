@@ -14,6 +14,7 @@ SRC_URI += "file://X001-DR-mach-imx6q-Add-GPIO-and-watchdog-prestart-detection.p
             file://0015-Backport-pci-imx6.c-from-mainline-4.9.123.patch \
             file://0016-DT-Add-PCIe-settings-but-leave-disabled.patch \
             file://0017-DT-Partition-SPI-flash.patch \
+            file://0018-fsl_updater-wrong-USB-gadget-ID-for-recognizing-targ.patch \
             "
 
 LOCALVERSION ?= "+dr-0"
