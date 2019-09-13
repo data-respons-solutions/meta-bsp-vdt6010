@@ -16,8 +16,6 @@ fi
 spl="$1"
 uboot="$2"
 
-cd /opt/oe/dr-vdt6010-distro/build/tmp-glibc/deploy/images/vdt6010-factory
-
 # Here we get a copy of the /dev folder before our scsi device is initiated
 sg_before=$(ls /dev/sg* | grep "sg")
 
