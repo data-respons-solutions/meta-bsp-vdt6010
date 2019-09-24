@@ -17,6 +17,6 @@ SRC_URI += "file://X001-DR-mach-imx6q-Add-GPIO-and-watchdog-prestart-detection.p
             file://0018-fsl_updater-wrong-USB-gadget-ID-for-recognizing-targ.patch \
             "
 
-LOCALVERSION ?= "+dr-0"
+LOCALVERSION ?= "+dr-1"
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
