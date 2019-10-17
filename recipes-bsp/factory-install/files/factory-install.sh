@@ -52,7 +52,7 @@ utp_com -d ${device} -c "send" -f ${spl} || die "Failed transferring spl binary"
 utp_com -d ${device} -c "$ cp \$FILE /tmp/spl" || die "Failed moving spl binary to tmp"
 utp_com -d ${device} -c "send" -f ${uboot} || die "Failed transferring uboot binary"
 utp_com -d ${device} -c "$ cp \$FILE /tmp/uboot" || die "Failed moving uboot binary to tmp"
-utp_com -d ${device} -c "$ flash-uboot --spl /tmp/spl --uboot /tmp/uboot --gpio gpio101" || die "Failed flashing"
+utp_com -d ${device} -c "$ flash-uboot --flash mtd --spl /tmp/spl --spl-offset 0x400 --uboot /tmp/uboot --gpio 101 --write" || die "Failed flashing"
 
 echo ""
 echo "FACTORY INSTALLATION SUCCESSFULL!"
