@@ -1,0 +1,38 @@
+From 70b023bb8fb96e26ec34cb76a12df13346c2e5c5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Wed, 30 Oct 2019 10:40:16 +0100
+Subject: [PATCH] Add links for vdt6010
+
+---
+ configs/vdt6010_defconfig         | 1 +
+ configs/vdt6010_factory_defconfig | 1 +
+ include/configs/vdt6010.h         | 1 +
+ 3 files changed, 3 insertions(+)
+ create mode 120000 configs/vdt6010_defconfig
+ create mode 120000 configs/vdt6010_factory_defconfig
+ create mode 120000 include/configs/vdt6010.h
+
+diff --git a/configs/vdt6010_defconfig b/configs/vdt6010_defconfig
+new file mode 120000
+index 0000000000..9e9d052f7a
+--- /dev/null
++++ b/configs/vdt6010_defconfig
+@@ -0,0 +1 @@
++../board/datarespons/vdt6010/configs/vdt6010_defconfig
+\ No newline at end of file
+diff --git a/configs/vdt6010_factory_defconfig b/configs/vdt6010_factory_defconfig
+new file mode 120000
+index 0000000000..55f77509eb
+--- /dev/null
++++ b/configs/vdt6010_factory_defconfig
+@@ -0,0 +1 @@
++../board/datarespons/vdt6010/configs/vdt6010_factory_defconfig
+\ No newline at end of file
+diff --git a/include/configs/vdt6010.h b/include/configs/vdt6010.h
+new file mode 120000
+index 0000000000..3437fdb23e
+--- /dev/null
++++ b/include/configs/vdt6010.h
+@@ -0,0 +1 @@
++../../board/datarespons/vdt6010/include/configs/vdt6010.h
+\ No newline at end of file

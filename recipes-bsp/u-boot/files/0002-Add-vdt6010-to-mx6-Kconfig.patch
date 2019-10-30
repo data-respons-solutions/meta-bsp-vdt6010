@@ -1,0 +1,36 @@
+From 1fdc2611ec09808dd975a93b50eff91640e3096e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Wed, 30 Oct 2019 10:43:18 +0100
+Subject: [PATCH] Add vdt6010 to mx6 Kconfig
+
+---
+ arch/arm/mach-imx/mx6/Kconfig | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm/mach-imx/mx6/Kconfig b/arch/arm/mach-imx/mx6/Kconfig
+index 3d56346ccb..bca6e671f0 100644
+--- a/arch/arm/mach-imx/mx6/Kconfig
++++ b/arch/arm/mach-imx/mx6/Kconfig
+@@ -516,6 +516,15 @@ config TARGET_ZC5601
+ 	select SUPPORT_SPL
+ 	imply CMD_DM
+ 
++config TARGET_VDT6010
++	bool "vdt6010"
++	select MX6QDL
++	select BOARD_LATE_INIT
++	select SUPPORT_SPL
++	select DM
++	select DM_THERMAL
++	select BOARD_EARLY_INIT_F
++
+ endchoice
+ 
+ config SYS_SOC
+@@ -571,5 +580,6 @@ source "board/udoo/Kconfig"
+ source "board/udoo/neo/Kconfig"
+ source "board/wandboard/Kconfig"
+ source "board/warp/Kconfig"
++source "board/datarespons/vdt6010/Kconfig"
+ 
+ endif
