@@ -1,0 +1,23 @@
+From 955e7a381c12bb6e57384e44d41a584250e661c7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Wed, 6 Nov 2019 11:49:31 +0100
+Subject: [PATCH] Add vdt6010 to dts makefile
+
+---
+ arch/arm/dts/Makefile | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 0e2ffdb87f..718a670199 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -513,7 +513,8 @@ dtb-$(CONFIG_MX6QDL) += \
+ 	imx6dl-sabreauto.dtb \
+ 	imx6dl-sabresd.dtb \
+ 	imx6qp-sabreauto.dtb \
+-	imx6qp-sabresd.dtb
++	imx6qp-sabresd.dtb \
++	vdt6010.dtb
+ 
+ dtb-$(CONFIG_MX6SL) += imx6sl-evk.dtb
+ 
