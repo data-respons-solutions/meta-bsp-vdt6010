@@ -1,14 +1,14 @@
 require recipes-bsp/u-boot/u-boot-common.inc
 require recipes-bsp/u-boot/u-boot.inc
 
-inherit imx_usb
+inherit fsl-u-boot-localversion ${@oe.utils.conditional('MACHINE','vdt6010-factory','imx_usb','',d)}
 
 DEPENDS += "bc-native dtc-native"
 
 SRCREV_FORMAT = "uboot_common_system"
 SRCREV_uboot = "3c99166441bf3ea325af2da83cfe65430b49c066"
 SRCREV_common = "894db7bd2cff0a4dbee9ab7a7741848da61dd717"
-SRCREV_system = "cd2695d2597b472c7e7e82f30435eb9acceb195d"
+SRCREV_system = "a700adf87501ce0f989401a3bd88efea6b956fb6"
 
 SRC_URI = " \
 	git://git.denx.de/u-boot.git;name=uboot \
