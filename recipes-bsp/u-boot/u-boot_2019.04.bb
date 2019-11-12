@@ -20,7 +20,7 @@ SRC_URI = "git://git.denx.de/u-boot.git;name=uboot \
            file://0005-Add-link-for-datarespons.h.patch \
            "
 
-LOCALVERSION = "+dr-2.0"
+LOCALVERSION = "+dr-2.1"
 
 EXTRA_OEMAKE += 'V=0'
 
