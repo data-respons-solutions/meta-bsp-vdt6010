@@ -1,0 +1,18 @@
+From e66d5166aa214c780bb20f07bffd16ca61644b8d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
+Date: Tue, 12 Nov 2019 11:20:25 +0100
+Subject: [PATCH] Add link for datarespons.h
+
+---
+ include/configs/datarespons.h | 1 +
+ 1 file changed, 1 insertion(+)
+ create mode 120000 include/configs/datarespons.h
+
+diff --git a/include/configs/datarespons.h b/include/configs/datarespons.h
+new file mode 120000
+index 0000000000..22429b8143
+--- /dev/null
++++ b/include/configs/datarespons.h
+@@ -0,0 +1 @@
++../../board/datarespons/common/include/configs/datarespons.h
+\ No newline at end of file
