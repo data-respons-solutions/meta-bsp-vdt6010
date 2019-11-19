@@ -7,8 +7,8 @@ DEPENDS += "bc-native dtc-native"
 
 SRCREV_FORMAT = "uboot_common_system"
 SRCREV_uboot = "3c99166441bf3ea325af2da83cfe65430b49c066"
-SRCREV_common = "0c4f96887d7107c5150909195bd5358164777eab"
-SRCREV_system = "93fe5e55232e763ae4436d3e789221f8ad0db001"
+SRCREV_common = "811b68aa6d92ac51ddc37e19e4479519be36fef0"
+SRCREV_system = "9e00dcc3797bf539624d028194b182ef1a91f796"
 
 SRC_URI = "git://git.denx.de/u-boot.git;name=uboot \
            gitsm://git@bitbucket.datarespons.com:7999/oe-bsp/uboot-common.git;protocol=ssh;branch=master;destsuffix=git/board/datarespons/common;name=common \
