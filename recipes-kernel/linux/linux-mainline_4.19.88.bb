@@ -11,10 +11,11 @@ DEPENDS += "lzop-native bc-native"
 BRANCH = "linux-4.19.y"
 LOCALVERSION = "+dr-1.0"
 SRCREV = "fb683b5e3f53a73e761952735736180939a313df"
-SRC_URI += " \
+SRC_URI = " \
 	git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git;branch=${BRANCH} \
 	file://defconfig \
-    file://sdma-imx6q.bin \
+	file://sdma-imx6q.bin \
+	file://0001-Add-ilitek-touch-driver-from-mainline-5.1.21.patch \
 "
 
 do_configure_prepend() {
@@ -22,4 +23,4 @@ do_configure_prepend() {
 	install -m 0644 ${WORKDIR}/sdma-imx6q.bin ${S}/firmware/imx/sdma/
 }
 
-COMPATIBLE_MACHINE = "(vdt6010|vdt6010-factory)"
+COMPATIBLE_MACHINE = "use-mainline-bsp"
