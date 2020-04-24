@@ -11,8 +11,8 @@ SRCREV_common = "811b68aa6d92ac51ddc37e19e4479519be36fef0"
 SRCREV_system = "9e00dcc3797bf539624d028194b182ef1a91f796"
 
 SRC_URI = "git://git.denx.de/u-boot.git;name=uboot \
-           gitsm://git@bitbucket.datarespons.com:7999/oe-bsp/uboot-common.git;protocol=ssh;branch=master;destsuffix=git/board/datarespons/common;name=common \
-           git://git@bitbucket.datarespons.com:7999/oe-bsp/uboot-vdt6010.git;protocol=ssh;branch=master;destsuffix=git/board/datarespons/vdt6010;name=system \
+           git://git@github.com/data-respons-solutions/uboot-vdt6010.git;branch=master;protocol=ssh;destsuffix=git/board/datarespons/vdt6010;name=system \
+           gitsm://git@github.com/data-respons-solutions/uboot-common.git;branch=master;protocol=ssh;destsuffix=git/board/datarespons/common;name=common \
            file://0001-Add-links-for-vdt6010.patch \
            file://0002-Add-vdt6010-to-mx6-Kconfig.patch \
            file://0003-Add-dts-links-for-vdt6010.patch \
