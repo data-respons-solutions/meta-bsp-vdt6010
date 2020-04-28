@@ -1,0 +1,30 @@
+#!/bin/sh
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+die() {
+    echo $1
+    /bin/sh
+}
+
+mkdir -p /sys /proc /dev
+
+mount -t sysfs none /sys
+mount -t proc none /proc
+mount -t devtmpfs none /dev
+
+modprobe user-gpios
+modprobe fsl_otp
+
+echo "Starting Factory Install"
+echo "Flash factory partition"
+flash-uboot --flash mtd --spl /boot/SPL --spl-offset 0x400 --uboot /boot/u-boot-ivt.img --gpio 101 --write || die "ERROR - failed flashing uboot"
+
+echo "Setting fuses"
+flash-fuse-imx --fuse CFG5_DIR_BT_DIS --commit || die "ERROR - failed fusing"
+
+echo "=========================================="
+echo "                  SUCCESS"
+echo "=========================================="
+
+/bin/sh
+
