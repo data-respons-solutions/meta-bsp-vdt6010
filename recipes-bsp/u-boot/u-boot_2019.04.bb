@@ -1,7 +1,10 @@
 require recipes-bsp/u-boot/u-boot-common.inc
 require recipes-bsp/u-boot/u-boot.inc
 
-inherit fsl-u-boot-localversion ${@oe.utils.conditional('MACHINE','vdt6010-factory','imx_usb','',d)}
+
+IS_FACTORY = "0"
+IS_FACTORY_factory = "1"
+inherit fsl-u-boot-localversion ${@oe.utils.conditional('IS_FACTORY','1','imx6_usb','',d)}
 
 DEPENDS += "bc-native dtc-native"
 
@@ -31,11 +34,33 @@ SPL_BINARY = "SPL"
 
 RPROVIDES_${PN} = "u-boot"
 
-do_install_append() {
-	install -d ${D}/boot
-	install -m 644 ${B}/${config}/${UBOOT_BINARY}.log ${D}/boot/
-	install -m 644 ${B}/${config}/${SPL_BINARY}.log ${D}/boot/
+UBOOT_CONFIG = "production"
+
+# Create imx_usb loader configs for factory machine
+python () {
+    if d.getVar('IS_FACTORY', True) == '1':
+        bb.build.addtask('do_imx6_usb', 'do_install', 'do_compile', d)
 }
 
+do_install_append_factory() {
+	for f in ${B}/imx6_usb/*; do
+		install -m 0644 ${f} ${D}/boot/;
+	done
+}
 
-UBOOT_CONFIG = "production"
+do_deploy_append_factory() {
+	for f in ${B}/imx6_usb/*; do
+		install -m 0644 ${f} ${DEPLOYDIR}/;
+	done
+}
+
+IMX6_USB_DIR = "${B}/imx6_usb"
+IMX6_USB_RAW_VID = "0x15a2"
+IMX6_USB_RAW_PID = "0x0054"
+IMX6_USB_PID = "0x2110"
+IMX6_USB_DTB = "${FACTORY_DEVICETREE}"
+IMX6_USB_DTB_LOADADDR = "0x11000000"
+IMX6_USB_ZIMAGE_LOADADDR = "0x12000000"
+IMX6_USB_INITRD_LOADADDR = "0x12C00000"
+
+FILES_${PN}_append_factory += "/boot"
