@@ -4,15 +4,15 @@ Date: Thu, 31 Oct 2019 12:51:15 +0000
 Subject: [PATCH] Add dts links for vdt6010
 
 ---
- arch/arm/dts/vdt6010.dts | 1 +
+ arch/arm/dts/vdt6010-q-revA.dts | 1 +
  1 file changed, 1 insertion(+)
- create mode 120000 arch/arm/dts/vdt6010.dts
+ create mode 120000 arch/arm/dts/vdt6010-q-revA.dts
 
-diff --git a/arch/arm/dts/vdt6010.dts b/arch/arm/dts/vdt6010.dts
+diff --git a/arch/arm/dts/vdt6010-q-revA.dts b/arch/arm/dts/vdt6010-q-revA.dts
 new file mode 120000
 index 0000000000..ba57d63a38
 --- /dev/null
-+++ b/arch/arm/dts/vdt6010.dts
++++ b/arch/arm/dts/vdt6010-q-revA.dts
 @@ -0,0 +1 @@
-+../../../board/datarespons/vdt6010/arch/arm/dts/vdt6010.dts
++../../../board/datarespons/vdt6010/arch/arm/dts/vdt6010-q-revA.dts
 \ No newline at end of file
