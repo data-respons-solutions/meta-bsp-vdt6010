@@ -11,10 +11,6 @@ SRC_URI = "git://git@bitbucket.datarespons.com:7999/oe-bsp/uboot-vdt6010.git;pro
 
 S = "${WORKDIR}/git/arch/arm/dts"
 
-do_configure_prepend() {
-    ln -s vdt6010.dts ${S}/datarespons-vdt6010-revA.dts
-}
-
 do_install() {
     for DTB_FILE in `ls *.dtb *.dtbo`; do
         install -Dm 0644 ${B}/${DTB_FILE} ${D}/boot/${DTB_FILE}
