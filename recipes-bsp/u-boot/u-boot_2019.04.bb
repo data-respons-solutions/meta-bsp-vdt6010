@@ -10,7 +10,7 @@ DEPENDS += "bc-native dtc-native"
 
 SRCREV_FORMAT = "uboot_common_system"
 SRCREV_uboot = "3c99166441bf3ea325af2da83cfe65430b49c066"
-SRCREV_common = "ca50b70651cfd52e17beb6a8fd1a1eabee603de5"
+SRCREV_common = "1a562e735f4cb5260e75e2f477cc683f9d9fb152"
 SRCREV_system = "51e94af7cd80fce0a8b52068fc6a0b19a2ae88d4"
 
 SRC_URI = "git://git.denx.de/u-boot.git;name=uboot \
@@ -23,7 +23,7 @@ SRC_URI = "git://git.denx.de/u-boot.git;name=uboot \
            file://0005-Add-link-for-datarespons.h.patch \
            "
 
-LOCALVERSION = "+dr-2.3"
+LOCALVERSION = "+dr-2.4"
 
 EXTRA_OEMAKE += 'V=0'
 
