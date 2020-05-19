@@ -6,7 +6,7 @@ inherit devicetree
 
 COMPATIBLE_MACHINE = "(vdt6010|vdt6010-factory)"
 
-SRCREV ?= "badaf3ee2e93536964e16c330b987fb887d44f49"
+SRCREV ?= "e09f37f7f1fd56d93d1cc3149a4809a67ec06cea"
 SRC_URI = "git://git@github.com/data-respons-solutions/uboot-vdt6010.git;protocol=ssh;branch=master;"
 
 S = "${WORKDIR}/git/arch/arm/dts"
