@@ -9,9 +9,9 @@ inherit fsl-u-boot-localversion ${@oe.utils.conditional('IS_FACTORY','1','imx6_u
 DEPENDS += "bc-native dtc-native"
 
 SRCREV_FORMAT = "uboot_common_system"
-SRCREV_uboot = "3c99166441bf3ea325af2da83cfe65430b49c066"
+SRCREV_uboot = "36fec02b1f90b92cf51ec531564f9284eae27ab4"
 SRCREV_common = "1a562e735f4cb5260e75e2f477cc683f9d9fb152"
-SRCREV_system = "51e94af7cd80fce0a8b52068fc6a0b19a2ae88d4"
+SRCREV_system = "6bdc0a33ef413de5cb6c75a58afaae82b9a2fd81"
 
 SRC_URI = "git://git.denx.de/u-boot.git;name=uboot \
            git://git@github.com/data-respons-solutions/uboot-vdt6010.git;branch=master;protocol=ssh;destsuffix=git/board/datarespons/vdt6010;name=system \

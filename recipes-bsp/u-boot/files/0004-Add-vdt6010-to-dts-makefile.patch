@@ -1,23 +1,21 @@
-From 955e7a381c12bb6e57384e44d41a584250e661c7 Mon Sep 17 00:00:00 2001
+From f4a347a69941405e791c9e442f1c0caf4e53688c Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Mikko=20Salom=C3=A4ki?= <ms@datarespons.se>
-Date: Wed, 6 Nov 2019 11:49:31 +0100
-Subject: [PATCH] Add vdt6010 to dts makefile
+Date: Mon, 18 May 2020 20:51:00 +0000
+Subject: [PATCH] Add-vdt6010-to-dts-makefile
 
 ---
- arch/arm/dts/Makefile | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/arm/dts/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
 
 diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
-index 0e2ffdb87f..718a670199 100644
+index 820ee9733a..8782b720a7 100644
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -513,7 +513,8 @@ dtb-$(CONFIG_MX6QDL) += \
- 	imx6dl-sabreauto.dtb \
- 	imx6dl-sabresd.dtb \
+@@ -658,6 +658,7 @@ dtb-y += \
  	imx6qp-sabreauto.dtb \
--	imx6qp-sabresd.dtb
-+	imx6qp-sabresd.dtb \
-+	vdt6010-q-revA.dtb
+ 	imx6qp-sabresd.dtb \
+ 	imx6qp-wandboard-revd1.dtb \
++	vdt6010-q-revA.dtb \
  
- dtb-$(CONFIG_MX6SL) += imx6sl-evk.dtb
+ endif
  
