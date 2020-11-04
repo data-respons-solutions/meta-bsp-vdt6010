@@ -10,8 +10,8 @@ DEPENDS += "bc-native dtc-native"
 
 SRCREV_FORMAT = "uboot_common_system"
 SRCREV_uboot = "36fec02b1f90b92cf51ec531564f9284eae27ab4"
-SRCREV_common = "1a562e735f4cb5260e75e2f477cc683f9d9fb152"
-SRCREV_system = "aa2f0f8c3137726271f752d2738246c8e4100237"
+SRCREV_common = "06f1253a01cf3ffc76f4af2b922b3df8b1e1f480"
+SRCREV_system = "59539859079b9889917d5cb20ca372810833e2a7"
 
 SRC_URI = "git://git.denx.de/u-boot.git;name=uboot \
            git://git@github.com/data-respons-solutions/uboot-vdt6010.git;branch=master;protocol=ssh;destsuffix=git/board/datarespons/vdt6010;name=system \
@@ -23,7 +23,7 @@ SRC_URI = "git://git.denx.de/u-boot.git;name=uboot \
            file://0005-Add-link-for-datarespons.h.patch \
            "
 
-LOCALVERSION = "+dr-2.5"
+LOCALVERSION = "+dr-2.6"
 
 EXTRA_OEMAKE += 'V=0'
 
@@ -59,8 +59,8 @@ IMX6_USB_RAW_VID = "0x15a2"
 IMX6_USB_RAW_PID = "0x0054"
 IMX6_USB_PID = "0x2110"
 IMX6_USB_DTB = "${FACTORY_DEVICETREE}"
-IMX6_USB_DTB_LOADADDR = "0x11000000"
+IMX6_USB_DTB_LOADADDR = "0x20000000"
 IMX6_USB_ZIMAGE_LOADADDR = "0x12000000"
-IMX6_USB_INITRD_LOADADDR = "0x12C00000"
+IMX6_USB_INITRD_LOADADDR = "0x20400000"
 
 FILES_${PN}_append_factory += "/boot"
