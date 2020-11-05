@@ -12,7 +12,7 @@ DEPENDS += "lzop-native bc-native"
 
 BRANCH = "linux-5.4.y"
 LOCALVERSION = "+dr-1.0"
-SRCREV = "cbaf2369956178e68fb714a30dc86cf768dd596a"
+SRCREV = "b300b28b78145b832f1112d77035111e35112cec"
 
 SRC_URI = " \
 	git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git;branch=${BRANCH} \
