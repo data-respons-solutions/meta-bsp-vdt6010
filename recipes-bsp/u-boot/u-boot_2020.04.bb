@@ -11,7 +11,7 @@ DEPENDS += "bc-native dtc-native"
 SRCREV_FORMAT = "uboot_common_system"
 SRCREV_uboot = "36fec02b1f90b92cf51ec531564f9284eae27ab4"
 SRCREV_common = "06f1253a01cf3ffc76f4af2b922b3df8b1e1f480"
-SRCREV_system = "59539859079b9889917d5cb20ca372810833e2a7"
+SRCREV_system = "e19577fa89ad6737c6c1d3ea5f2799a7479a76d6"
 
 SRC_URI = "git://git.denx.de/u-boot.git;name=uboot \
            git://git@github.com/data-respons-solutions/uboot-vdt6010.git;branch=master;protocol=ssh;destsuffix=git/board/datarespons/vdt6010;name=system \
@@ -23,7 +23,7 @@ SRC_URI = "git://git.denx.de/u-boot.git;name=uboot \
            file://0005-Add-link-for-datarespons.h.patch \
            "
 
-LOCALVERSION = "+dr-2.6"
+LOCALVERSION = "+dr-2.7"
 
 EXTRA_OEMAKE += 'V=0'
 
